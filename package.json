@@ -1,0 +1,26 @@
+{
+  "name": "sharetimer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "build:client": "vp build",
+    "dev": "pnpm run build:client && wrangler dev",
+    "preview": "wrangler dev --port 8787 --ip 127.0.0.1",
+    "e2e:server": "wrangler dev --port 8787 --ip 127.0.0.1",
+    "test": "vp test",
+    "test:watch": "vp test watch",
+    "typecheck": "wrangler types && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "e2e": "pnpm run build:client && playwright test",
+    "cf-typegen": "wrangler types"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.4.4",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.3.0",
+    "wrangler": "^4.151.1"
+  }
+}
