@@ -126,7 +126,7 @@ remaining = endsAt - (Date.now() + offset);
 - 再生は Web Audio で**スケジュール**する。期限直前に再同期し、期限ちょうどの時刻に `start()` する。出力遅延の補正は行わない（[ADR 0003](adr/0003-client-side-alarm.md) / [ADR 0007](adr/0007-no-output-latency-compensation.md)）。
 
 ```js
-// 音は期限ちょうどに鳴り始める。端末の報告する出力遅延は使わない。
+// 期限ちょうどの時刻に鳴らす（補正なし）。
 const delaySec = Math.max(0, endsAt - (Date.now() + offset)) / 1000;
 src.start(ctx.currentTime + delaySec);
 ```

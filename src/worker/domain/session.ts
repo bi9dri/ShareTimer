@@ -1,4 +1,10 @@
-import { DEFAULT_ALARM_SOUND, MAX_DURATION_MS, SESSION_TTL_MS, TTL_MARGIN_MS } from "./constants";
+import {
+  ALARM_SOUNDS,
+  DEFAULT_ALARM_SOUND,
+  MAX_DURATION_MS,
+  SESSION_TTL_MS,
+  TTL_MARGIN_MS,
+} from "./constants";
 import type { OpRequest, PublicState, Session } from "./types";
 
 export type OpOutcome =
@@ -117,7 +123,10 @@ export function toPublicState(session: Session, serverTime: number): PublicState
     durationMs: session.durationMs,
     endsAt: session.status === "running" ? session.endsAt : null,
     remainingMs: session.status === "paused" ? session.remainingMs : null,
-    alarmSound: session.alarmSound,
+    // Sessions created before the bundled presets still hold an old ID.
+    alarmSound: (ALARM_SOUNDS as readonly string[]).includes(session.alarmSound)
+      ? session.alarmSound
+      : DEFAULT_ALARM_SOUND,
     createdAt: session.createdAt,
     serverTime,
   };

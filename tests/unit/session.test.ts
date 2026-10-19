@@ -182,6 +182,11 @@ it("exposes only the public fields, with an endsAt when running", () => {
   expect(Object.keys(state)).not.toContain("lastAdminOpAt");
 });
 
+it("normalizes an alarm sound that predates the bundled presets", () => {
+  const legacy = { ...newSession(), alarmSound: "beep" as never };
+  expect(toPublicState(legacy, T0).alarmSound).toBe(DEFAULT_ALARM_SOUND);
+});
+
 it("exposes remainingMs only while paused", () => {
   const paused = run(
     run(newSession(), { type: "set", durationMs: 60_000 }, T0),

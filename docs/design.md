@@ -135,7 +135,7 @@ DO が保持するセッション。
 |---|---|
 | 無料枠超過で Free では操作が失敗（課金ではなくエラー） | 監視して Paid へ（[ADR 0005](adr/0005-cloudflare-durable-objects-hosting.md)） |
 | 期限切れ後に接続した端末はアラームを逃す | 許容。必要なら「鳴りっぱなし」モードを追加（[ADR 0003](adr/0003-client-side-alarm.md)） |
-| 同時鳴動の精度に下限がある（数十 ms） | 物理的な限界。キャリブレーションで低減（[ADR 0003](adr/0003-client-side-alarm.md)） |
+| 同時鳴動の精度に下限がある（数十 ms） | 物理的な限界。端末ごとの実出力遅延のぶんだけ届く時刻がずれる（[ADR 0007](adr/0007-no-output-latency-compensation.md)） |
 | WS 不可の環境ではポーリングに落ち更新が遅れる | 許容（[ADR 0001](adr/0001-realtime-websocket-rest.md)） |
 | 管理者トークンを失うと復旧不可 | トークン再発行は非目標（[ADR 0004](adr/0004-admin-token-localstorage.md)） |
 

@@ -38,8 +38,8 @@ export function scheduleOffsetSeconds(remaining: number): number {
 }
 
 /**
- * Bundled preset files. Every preset is decoded up front so a scheduled start
- * is never delayed by a fetch (ADR 0003).
+ * URL of each bundled preset. They are preloaded at startup so a scheduled
+ * start never waits on a fetch (ADR 0006).
  */
 export const ALARM_SOURCES: Record<AlarmSound, string> = {
   alarm: "/alarm/alarm.wav",
@@ -74,6 +74,7 @@ export class WebAudioAlarm implements AlarmPlayer {
   private master: GainNode | null = null;
   private active: AudioBufferSourceNode[] = [];
   private readonly buffers = new Map<AlarmSound, AudioBuffer>();
+  private readonly loads = new Map<AlarmSound, Promise<AudioBuffer | null>>();
   private volume: number;
 
   constructor(volume: number) {
@@ -84,7 +85,12 @@ export class WebAudioAlarm implements AlarmPlayer {
     if (this.context !== null) return this.context;
     const Constructor = audioContextConstructor();
     if (Constructor === null) return null;
-    const context = new Constructor();
+    let context: AudioContext;
+    try {
+      context = new Constructor();
+    } catch {
+      return null;
+    }
     const master = context.createGain();
     master.gain.value = this.volume;
     master.connect(context.destination);
@@ -111,25 +117,40 @@ export class WebAudioAlarm implements AlarmPlayer {
   }
 
   /**
-   * Fetches and decodes every preset. Decoding needs no user gesture, so this
-   * runs at startup: the deadline is never spent waiting on a download.
+   * Fetches and decodes every preset up front. Decoding needs no user gesture,
+   * so a scheduled start never waits on a download (ADR 0006).
    */
   async preload(): Promise<void> {
+    await Promise.all(ALARM_SOUNDS.map((sound) => this.load(sound)));
+  }
+
+  /** Fetches and decodes one preset. Failures are not cached, so a retry can succeed. */
+  private load(sound: AlarmSound): Promise<AudioBuffer | null> {
+    const ready = this.buffers.get(sound);
+    if (ready !== undefined) return Promise.resolve(ready);
+
+    const inFlight = this.loads.get(sound);
+    if (inFlight !== undefined) return inFlight;
+
     const context = this.ensureContext();
-    if (context === null) return;
-    await Promise.all(
-      ALARM_SOUNDS.map(async (sound) => {
-        if (this.buffers.has(sound)) return;
-        try {
-          const response = await fetch(ALARM_SOURCES[sound]);
-          if (!response.ok) return;
-          const buffer = await context.decodeAudioData(await response.arrayBuffer());
-          this.buffers.set(sound, buffer);
-        } catch {
-          // Undecoded presets stay silent rather than breaking the alarm path.
-        }
-      }),
-    );
+    if (context === null) return Promise.resolve(null);
+
+    const pending = (async (): Promise<AudioBuffer | null> => {
+      try {
+        const response = await fetch(ALARM_SOURCES[sound]);
+        if (!response.ok) return null;
+        const buffer = await context.decodeAudioData(await response.arrayBuffer());
+        this.buffers.set(sound, buffer);
+        return buffer;
+      } catch {
+        return null;
+      } finally {
+        this.loads.delete(sound);
+      }
+    })();
+
+    this.loads.set(sound, pending);
+    return pending;
   }
 
   setVolume(volume: number): void {
@@ -139,14 +160,30 @@ export class WebAudioAlarm implements AlarmPlayer {
 
   play(sound: AlarmSound, offsetSeconds: number): void {
     const context = this.ensureContext();
+    if (context === null || this.master === null) return;
+
+    if (this.buffers.has(sound)) {
+      this.start(sound, offsetSeconds);
+      return;
+    }
+    // Still decoding (for example, a page loaded inside the lead window):
+    // sound it as soon as it is ready rather than dropping the alarm.
+    void this.load(sound).then((buffer) => {
+      if (buffer !== null) this.start(sound, 0);
+    });
+  }
+
+  private start(sound: AlarmSound, offsetSeconds: number): void {
+    const context = this.context;
+    const master = this.master;
     const buffer = this.buffers.get(sound);
-    if (context === null || this.master === null || buffer === undefined) return;
+    if (context === null || master === null || buffer === undefined) return;
     if (context.state === "suspended") void context.resume();
 
     this.stop();
     const source = context.createBufferSource();
     source.buffer = buffer;
-    source.connect(this.master);
+    source.connect(master);
     // Scheduled on the audio clock, so the deadline is hit regardless of timer jitter.
     source.start(context.currentTime + Math.max(0, offsetSeconds));
     this.active.push(source);

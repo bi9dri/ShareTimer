@@ -1,7 +1,7 @@
 # ADR 0003: アラームは全端末がローカルに判定・再生・停止する
 
 - 日付: 2026-10-10
-- 状態: 承認済み
+- 状態: 承認済み（出力遅延の補正は [ADR 0007](0007-no-output-latency-compensation.md) で廃止）
 
 ## 文脈
 
@@ -22,7 +22,7 @@
 失敗要因は 2 つ。時計オフセットの推定誤差は [ADR 0002](0002-absolute-endsat-ntp-sync.md) の NTP 推定で解消する。もう一つの音声再生の起動遅延に対して:
 
 - `HTMLAudioElement.play()`（呼び出しから発音まで可変の遅延）ではなく **Web Audio API** を使い、`AudioContext` の高精度クロック上に目標時刻をスケジュールする（`src.start(ctx.currentTime + delay)`）。`setTimeout` の粒度や `play()` の揺らぎに依存しない。音源は事前に `decodeAudioData` して常備する。
-- 端末ごとの音声出力遅延は `AudioContext.outputLatency` / `baseLatency` で補正する。実機依存で机上値では合わないため、**手動キャリブレーション値**を端末ローカル設定に用意する。（→ 報告値が環境によって大きく外れることが判明したため、[ADR 0007](0007-no-output-latency-compensation.md) で補正自体を廃止した）
+- 端末ごとの音声出力遅延は補正しない。`outputLatency` / `baseLatency` は推定値で環境により大きく外れ、補正するとアラームが期限より早く鳴る（[ADR 0007](0007-no-output-latency-compensation.md)）。
 - 期限直前に `offset` を再同期する（[ADR 0002](0002-absolute-endsat-ntp-sync.md)）。
 - ブラウザの自動再生制限により、入室時に無音で `AudioContext` を `resume()` して unlock する。
 
@@ -34,5 +34,5 @@
 - 良い: サーバに精密なタイマーが不要（DO Alarm はスナップショットの一貫性のためだけに存在）。
 - 悪い: 端末側にオフセット推定・Web Audio スケジューリングの実装が要る。`<audio>` を 1 回 `play()` するより複雑。
 - 悪い: 期限切れの瞬間に接続していない端末はアラームを逃す。許容（「鳴りっぱなし」モードが必要になれば別途追加）。
-- 悪い: ハードウェア差で完全な同時性は消えない。キャリブレーションで低減する。
+- 悪い: ハードウェア差で完全な同時性は消えない。端末ごとの実出力遅延のぶんだけ「音が届く時刻」がずれる（[ADR 0007](0007-no-output-latency-compensation.md)）。
 - 注意: 音源は事前デコード必須。デコードが期限に間に合わないと最初の一発を逃す。

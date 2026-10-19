@@ -324,6 +324,15 @@ test.describe("shared state across devices", () => {
 });
 
 test.describe("alarm", () => {
+  test("serves every bundled preset", async ({ request }) => {
+    for (const id of ["alarm", "bell", "piano", "jingle"]) {
+      const response = await request.get(`/alarm/${id}.wav`);
+      expect(response.status()).toBe(200);
+      expect(response.headers()["content-type"]).toContain("audio/wav");
+      expect((await response.body()).length).toBeGreaterThan(10_000);
+    }
+  });
+
   test("rings on every device when the timer runs out", async ({ browser, request }) => {
     const adminContext = await browser.newContext();
     const adminPage = await adminContext.newPage();

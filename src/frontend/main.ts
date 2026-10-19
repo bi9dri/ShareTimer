@@ -217,7 +217,7 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
     const decision = evaluateAlarm(gate, state, remaining);
     gate = decision.gate;
     if (decision.fire) armAlarm(remaining);
-    // The display switches on the very tick that the clock reaches zero.
+    // The frame loop paints the display; this covers a hidden tab, where rAF stops.
     if (remaining <= 0) showAlarm();
     maybeResync(remaining, state);
   }
@@ -225,12 +225,18 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
   function applyState(next: PublicState): void {
     const previousEndsAt = state.endsAt;
     state = next;
-    if (next.status === "running" && next.endsAt !== previousEndsAt) {
+    // A pause leaves the scheduled source running until its old deadline, and a
+    // reschedule replaces it. Expiry must not stop it: that state arrives as the
+    // alarm starts.
+    const paused = next.status === "paused";
+    const rescheduled = next.status === "running" && next.endsAt !== previousEndsAt;
+    if (paused || rescheduled) {
       alarm.stop();
       clearAlarming();
     }
     view().setState(next);
     tick();
+    startPainting();
   }
 
   async function refreshOffset(): Promise<void> {
@@ -240,6 +246,25 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
 
   view().setState(initial);
   tick();
+
+  // Painting runs at frame rate so the progress line moves smoothly while a
+  // countdown is live. Arming the alarm stays on the interval below: rAF stops
+  // in a hidden tab.
+  const paint = (): void => {
+    frame = 0;
+    if (state.status !== "running") return;
+    const remaining = computeRemaining(state);
+    view().setRemaining(remaining);
+    if (remaining <= 0) {
+      showAlarm();
+      return;
+    }
+    frame = window.requestAnimationFrame(paint);
+  };
+  const startPainting = (): void => {
+    if (frame === 0 && state.status === "running") frame = window.requestAnimationFrame(paint);
+  };
+  startPainting();
 
   const disconnect = connectSession(sessionId, {
     onState: applyState,
@@ -252,21 +277,6 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
   const tickTimer = window.setInterval(tick, TICK_INTERVAL_MS);
   const resyncTimer = window.setInterval(() => void refreshOffset(), RESYNC_INTERVAL_MS);
 
-  // Painting runs at frame rate so the progress line moves smoothly. Arming the
-  // alarm stays on the interval above: rAF stops in a hidden tab.
-  const paint = (): void => {
-    frame = window.requestAnimationFrame(paint);
-    if (state.status === "idle") {
-      view().setRemaining(null);
-      return;
-    }
-    const remaining = computeRemaining(state);
-    view().setRemaining(remaining);
-    // Keep the alarm styling on the same frame as the clock and the sound.
-    if (state.status === "running" && remaining <= 0) showAlarm();
-  };
-  frame = window.requestAnimationFrame(paint);
-
   window.addEventListener("pagehide", () => {
     window.clearInterval(tickTimer);
     window.clearInterval(resyncTimer);
@@ -274,6 +284,11 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
     if (alarmResetTimer !== null) window.clearTimeout(alarmResetTimer);
     disconnect();
     alarm.stop();
+  });
+
+  window.addEventListener("pageshow", (event) => {
+    // A bfcache restore brings back dead timers and sockets; reload to rejoin.
+    if (event.persisted) location.reload();
   });
 
   void refreshOffset();
