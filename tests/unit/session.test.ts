@@ -121,8 +121,8 @@ it("rejects extend unless running", () => {
 
 it("setAlarmSound applies in any status without touching endsAt", () => {
   const running = run(newSession(), { type: "set", durationMs: 60_000 }, T0);
-  const changed = run(running, { type: "setAlarmSound", alarmSound: "chime" }, T0 + 1_000);
-  expect(changed.alarmSound).toBe("chime");
+  const changed = run(running, { type: "setAlarmSound", alarmSound: "piano" }, T0 + 1_000);
+  expect(changed.alarmSound).toBe("piano");
   expect(changed.endsAt).toBe(T0 + 60_000);
   expect(changed.lastAdminOpAt).toBe(T0 + 1_000);
 });

@@ -360,6 +360,10 @@ test.describe("alarm", () => {
 
     await expect(sessionRoot(page)).toHaveAttribute("data-alarming", "true", { timeout: 15_000 });
     await expect(remainingText(page)).toHaveText("00:00");
+
+    // The progress line must not lag the clock: its width changes instantly.
+    await expect(page.locator("#progress")).toHaveCSS("transition-duration", "0s");
+    await expect(page.locator("#progress")).toHaveCSS("width", "0px");
   });
 
   test("returns to the pre-countdown look a few seconds after the alarm", async ({

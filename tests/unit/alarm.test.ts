@@ -1,7 +1,7 @@
 import { expect, it } from "vite-plus/test";
 
 import {
-  ALARM_PRESETS,
+  ALARM_SOURCES,
   evaluateAlarm,
   initAlarmGate,
   SCHEDULE_LEAD_MS,
@@ -17,7 +17,7 @@ function state(patch: Partial<PublicState> = {}): PublicState {
     durationMs: 60_000,
     endsAt: 1_000_000,
     remainingMs: null,
-    alarmSound: "beep",
+    alarmSound: "alarm",
     createdAt: 0,
     serverTime: 0,
     ...patch,
@@ -75,20 +75,15 @@ it("re-arms after a pause and resume cycle", () => {
   expect(resumed.fire).toBe(true);
 });
 
-it("compensates the audio output latency when scheduling", () => {
-  expect(scheduleOffsetSeconds(1_500, 20)).toBeCloseTo(1.48, 5);
-  expect(scheduleOffsetSeconds(10, 20)).toBe(0);
-  expect(scheduleOffsetSeconds(-400, 20)).toBe(0);
+it("schedules the sound on the boundary, with no latency compensation", () => {
+  expect(scheduleOffsetSeconds(1_500)).toBeCloseTo(1.5, 5);
+  expect(scheduleOffsetSeconds(10)).toBeCloseTo(0.01, 5);
+  expect(scheduleOffsetSeconds(-400)).toBe(0);
 });
 
-it("defines a playable preset for every alarm sound", () => {
+it("maps every alarm sound to a bundled file and nothing else", () => {
+  expect(Object.keys(ALARM_SOURCES).sort()).toEqual([...ALARM_SOUNDS].sort());
   for (const sound of ALARM_SOUNDS) {
-    const preset = ALARM_PRESETS[sound];
-    expect(preset.length).toBeGreaterThan(0);
-    for (const tone of preset) {
-      expect(tone.durationMs).toBeGreaterThan(0);
-      expect(tone.gain).toBeGreaterThan(0);
-      expect(tone.frequency).toBeGreaterThan(0);
-    }
+    expect(ALARM_SOURCES[sound]).toMatch(/^\/alarm\/[a-z]+\.wav$/);
   }
 });

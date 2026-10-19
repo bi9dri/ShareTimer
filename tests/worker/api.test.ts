@@ -69,7 +69,7 @@ it("returns an idle snapshot straight after creation", async () => {
     status: "idle",
     endsAt: null,
     remainingMs: null,
-    alarmSound: "beep",
+    alarmSound: "alarm",
   });
   expect(state["serverTime"]).toBeTypeOf("number");
   expect(state).not.toHaveProperty("adminTokenHash");

@@ -58,11 +58,11 @@
 
 | type | ボディ | 前提 |
 |---|---|---|
-| `set` | `{ "durationMs": 60000, "alarmSound": "beep" }` | `alarmSound` 省略可 |
+| `set` | `{ "durationMs": 60000, "alarmSound": "alarm" }` | `alarmSound` 省略可 |
 | `pause` | `{}` | `status === "running"` |
 | `resume` | `{}` | `status === "paused"` |
 | `extend` | `{ "deltaMs": 60000 }` | `status === "running"` |
-| `setAlarmSound` | `{ "alarmSound": "chime" }` | 一覧にある ID |
+| `setAlarmSound` | `{ "alarmSound": "piano" }` | 一覧にある ID |
 
 レスポンス:
 
@@ -83,7 +83,7 @@
   "durationMs": 60000,
   "endsAt": 1700000060000,
   "remainingMs": null,
-  "alarmSound": "beep",
+  "alarmSound": "alarm",
   "createdAt": 1700000000000,
   "serverTime": 1700000005000
 }
@@ -100,7 +100,7 @@
 
 ```json
 {"type":"hello", "data":{"retryMs":1000}}
-{"type":"state", "data":{"id":"...","status":"running","durationMs":60000,"endsAt":1700000060000,"remainingMs":null,"alarmSound":"beep","createdAt":1700000000000,"serverTime":1700000005000}}
+{"type":"state", "data":{"id":"...","status":"running","durationMs":60000,"endsAt":1700000060000,"remainingMs":null,"alarmSound":"alarm","createdAt":1700000000000,"serverTime":1700000005000}}
 {"type":"time",  "data":{"serverTime":1700000010000}}
 {"type":"closed","data":{}}
 ```
@@ -123,11 +123,11 @@ remaining = endsAt - (Date.now() + offset);
 ### クライアントのアラーム判定と再生
 
 - 前回 `running` だった状態から期限が到来した（補正済み `remaining <= 0`）ときに、そのタイマー世代で未再生ならアラームを 1 回鳴らす。
-- 再生は Web Audio で**スケジュール**する。期限直前に再同期し、出力遅延を補正する（[ADR 0003](adr/0003-client-side-alarm.md)）。
+- 再生は Web Audio で**スケジュール**する。期限直前に再同期し、期限ちょうどの時刻に `start()` する。出力遅延の補正は行わない（[ADR 0003](adr/0003-client-side-alarm.md) / [ADR 0007](adr/0007-no-output-latency-compensation.md)）。
 
 ```js
-// outputLatencyMs は AudioContext.outputLatency / 手動キャリブレーション値
-const delaySec = Math.max(0, (endsAt - (Date.now() + offset)) - outputLatencyMs) / 1000;
+// 音は期限ちょうどに鳴り始める。端末の報告する出力遅延は使わない。
+const delaySec = Math.max(0, endsAt - (Date.now() + offset)) / 1000;
 src.start(ctx.currentTime + delaySec);
 ```
 
@@ -145,4 +145,11 @@ src.start(ctx.currentTime + delaySec);
 
 ## プリセット音源
 
-`beep` / `chime` / `bell` などの ID と実ファイルは実装時に確定し、フロントの静的アセットとして同梱する。
+| ID | 内容 | 長さ |
+|---|---|---|
+| `alarm` | 無機質な電子アラーム（3 連ビープ ×2） | 3.0 秒 |
+| `bell` | 大きな鐘の一打 | 2.1 秒 |
+| `piano` | ピアノの単音 | 2.0 秒 |
+| `jingle` | シンセの短いジングル | 2.0 秒 |
+
+既定は `alarm`。WAV（16-bit / 44.1 kHz / ステレオ）をフロントの静的アセット（`public/alarm/`）として同梱する（[ADR 0006](adr/0006-bundled-alarm-audio-files.md)）。

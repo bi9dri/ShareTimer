@@ -1,4 +1,4 @@
-import { type AlarmSound } from "../worker/domain/constants";
+import { ALARM_SOUNDS, type AlarmSound } from "../worker/domain/constants";
 import type { PublicState } from "../worker/domain/types";
 
 export const SCHEDULE_LEAD_MS = 1_500;
@@ -32,42 +32,26 @@ export function evaluateAlarm(
   return { gate: { generation, scheduled }, fire: false };
 }
 
-export function scheduleOffsetSeconds(remaining: number, outputLatencyMs: number): number {
-  return Math.max(0, remaining - outputLatencyMs) / 1000;
+/** Seconds from now until the deadline. The sound starts on the boundary itself. */
+export function scheduleOffsetSeconds(remaining: number): number {
+  return Math.max(0, remaining) / 1000;
 }
 
-export interface ToneSpec {
-  wave: OscillatorType;
-  frequency: number;
-  durationMs: number;
-  gain: number;
-  startMs: number;
-}
-
-function tones(spec: Omit<ToneSpec, "startMs">, count: number, gapMs: number): ToneSpec[] {
-  return Array.from({ length: count }, (_unused, index) => ({
-    ...spec,
-    startMs: index * gapMs,
-  }));
-}
-
-export const ALARM_PRESETS: Record<AlarmSound, ToneSpec[]> = {
-  beep: tones({ wave: "square", frequency: 880, durationMs: 150, gain: 0.35 }, 3, 250),
-  chime: [
-    { wave: "sine", frequency: 784, durationMs: 700, gain: 0.35, startMs: 0 },
-    { wave: "sine", frequency: 988, durationMs: 700, gain: 0.3, startMs: 220 },
-    { wave: "sine", frequency: 1_319, durationMs: 900, gain: 0.25, startMs: 440 },
-  ],
-  bell: [
-    { wave: "triangle", frequency: 660, durationMs: 1_400, gain: 0.4, startMs: 0 },
-    { wave: "sine", frequency: 1_320, durationMs: 1_200, gain: 0.15, startMs: 0 },
-  ],
+/**
+ * Bundled preset files. Every preset is decoded up front so a scheduled start
+ * is never delayed by a fetch (ADR 0003).
+ */
+export const ALARM_SOURCES: Record<AlarmSound, string> = {
+  alarm: "/alarm/alarm.wav",
+  bell: "/alarm/bell.wav",
+  piano: "/alarm/piano.wav",
+  jingle: "/alarm/jingle.wav",
 };
 
 export interface AlarmPlayer {
   unlock(): Promise<boolean>;
   isUnlocked(): boolean;
-  outputLatencyMs(): number;
+  preload(): Promise<void>;
   play(sound: AlarmSound, offsetSeconds: number): void;
   stop(): void;
   setVolume(volume: number): void;
@@ -88,7 +72,8 @@ function audioContextConstructor(): AudioContextConstructor | null {
 export class WebAudioAlarm implements AlarmPlayer {
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
-  private active: OscillatorNode[] = [];
+  private active: AudioBufferSourceNode[] = [];
+  private readonly buffers = new Map<AlarmSound, AudioBuffer>();
   private volume: number;
 
   constructor(volume: number) {
@@ -125,11 +110,26 @@ export class WebAudioAlarm implements AlarmPlayer {
     return this.context !== null && this.context.state === "running";
   }
 
-  outputLatencyMs(): number {
-    const context = this.context;
-    if (context === null) return 0;
-    const latency = context.outputLatency || context.baseLatency || 0;
-    return Number.isFinite(latency) ? latency * 1_000 : 0;
+  /**
+   * Fetches and decodes every preset. Decoding needs no user gesture, so this
+   * runs at startup: the deadline is never spent waiting on a download.
+   */
+  async preload(): Promise<void> {
+    const context = this.ensureContext();
+    if (context === null) return;
+    await Promise.all(
+      ALARM_SOUNDS.map(async (sound) => {
+        if (this.buffers.has(sound)) return;
+        try {
+          const response = await fetch(ALARM_SOURCES[sound]);
+          if (!response.ok) return;
+          const buffer = await context.decodeAudioData(await response.arrayBuffer());
+          this.buffers.set(sound, buffer);
+        } catch {
+          // Undecoded presets stay silent rather than breaking the alarm path.
+        }
+      }),
+    );
   }
 
   setVolume(volume: number): void {
@@ -139,40 +139,23 @@ export class WebAudioAlarm implements AlarmPlayer {
 
   play(sound: AlarmSound, offsetSeconds: number): void {
     const context = this.ensureContext();
-    if (context === null || this.master === null) return;
+    const buffer = this.buffers.get(sound);
+    if (context === null || this.master === null || buffer === undefined) return;
     if (context.state === "suspended") void context.resume();
 
     this.stop();
-    const startAt = context.currentTime + Math.max(0, offsetSeconds);
-
-    for (const tone of ALARM_PRESETS[sound]) {
-      const toneStart = startAt + tone.startMs / 1000;
-      const toneEnd = toneStart + tone.durationMs / 1000;
-      const holdUntil = Math.max(toneStart, toneEnd - 0.03);
-
-      const oscillator = context.createOscillator();
-      oscillator.type = tone.wave;
-      oscillator.frequency.value = tone.frequency;
-
-      const gain = context.createGain();
-      gain.gain.setValueAtTime(0, toneStart);
-      gain.gain.linearRampToValueAtTime(tone.gain, toneStart + 0.01);
-      gain.gain.setValueAtTime(tone.gain, holdUntil);
-      gain.gain.linearRampToValueAtTime(0, toneEnd);
-
-      oscillator.connect(gain);
-      gain.connect(this.master);
-
-      oscillator.start(toneStart);
-      oscillator.stop(toneEnd);
-      this.active.push(oscillator);
-    }
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.master);
+    // Scheduled on the audio clock, so the deadline is hit regardless of timer jitter.
+    source.start(context.currentTime + Math.max(0, offsetSeconds));
+    this.active.push(source);
   }
 
   stop(): void {
-    for (const oscillator of this.active) {
+    for (const source of this.active) {
       try {
-        oscillator.stop();
+        source.stop();
       } catch {
         // Already stopped.
       }

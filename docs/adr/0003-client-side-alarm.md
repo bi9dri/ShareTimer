@@ -22,7 +22,7 @@
 失敗要因は 2 つ。時計オフセットの推定誤差は [ADR 0002](0002-absolute-endsat-ntp-sync.md) の NTP 推定で解消する。もう一つの音声再生の起動遅延に対して:
 
 - `HTMLAudioElement.play()`（呼び出しから発音まで可変の遅延）ではなく **Web Audio API** を使い、`AudioContext` の高精度クロック上に目標時刻をスケジュールする（`src.start(ctx.currentTime + delay)`）。`setTimeout` の粒度や `play()` の揺らぎに依存しない。音源は事前に `decodeAudioData` して常備する。
-- 端末ごとの音声出力遅延は `AudioContext.outputLatency` / `baseLatency` で補正する。実機依存で机上値では合わないため、**手動キャリブレーション値**を端末ローカル設定に用意する。
+- 端末ごとの音声出力遅延は `AudioContext.outputLatency` / `baseLatency` で補正する。実機依存で机上値では合わないため、**手動キャリブレーション値**を端末ローカル設定に用意する。（→ 報告値が環境によって大きく外れることが判明したため、[ADR 0007](0007-no-output-latency-compensation.md) で補正自体を廃止した）
 - 期限直前に `offset` を再同期する（[ADR 0002](0002-absolute-endsat-ntp-sync.md)）。
 - ブラウザの自動再生制限により、入室時に無音で `AudioContext` を `resume()` して unlock する。
 

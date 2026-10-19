@@ -4,9 +4,9 @@ import { MAX_DURATION_MS } from "../../src/worker/domain/constants";
 import { parseOp } from "../../src/worker/domain/validation";
 
 it("parses a set op with a preset alarm sound", () => {
-  expect(parseOp({ type: "set", durationMs: 60_000, alarmSound: "beep" })).toEqual({
+  expect(parseOp({ type: "set", durationMs: 60_000, alarmSound: "alarm" })).toEqual({
     ok: true,
-    op: { type: "set", durationMs: 60_000, alarmSound: "beep" },
+    op: { type: "set", durationMs: 60_000, alarmSound: "alarm" },
   });
 });
 

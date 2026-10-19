@@ -88,6 +88,7 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
   const store = browserStore();
   const adminToken = loadAdminToken(store, sessionId);
   const alarm = new WebAudioAlarm(loadVolume(store));
+  void alarm.preload();
 
   let state: PublicState = initial;
   let offset = 0;
@@ -95,6 +96,7 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
   let resyncedGeneration: number | null = null;
   let alarmShown = false;
   let alarmResetTimer: number | null = null;
+  let frame = 0;
 
   const viewRef: { current: SessionView | null } = { current: null };
   const view = (): SessionView => {
@@ -173,7 +175,7 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
 
   /** Schedules the sound so it lands on the boundary; it does not touch the display. */
   function armAlarm(remaining: number): void {
-    alarm.play(state.alarmSound, scheduleOffsetSeconds(remaining, alarm.outputLatencyMs()));
+    alarm.play(state.alarmSound, scheduleOffsetSeconds(remaining));
   }
 
   /** Flips the alarm display, exactly when the clock reads zero. */
@@ -250,9 +252,25 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
   const tickTimer = window.setInterval(tick, TICK_INTERVAL_MS);
   const resyncTimer = window.setInterval(() => void refreshOffset(), RESYNC_INTERVAL_MS);
 
+  // Painting runs at frame rate so the progress line moves smoothly. Arming the
+  // alarm stays on the interval above: rAF stops in a hidden tab.
+  const paint = (): void => {
+    frame = window.requestAnimationFrame(paint);
+    if (state.status === "idle") {
+      view().setRemaining(null);
+      return;
+    }
+    const remaining = computeRemaining(state);
+    view().setRemaining(remaining);
+    // Keep the alarm styling on the same frame as the clock and the sound.
+    if (state.status === "running" && remaining <= 0) showAlarm();
+  };
+  frame = window.requestAnimationFrame(paint);
+
   window.addEventListener("pagehide", () => {
     window.clearInterval(tickTimer);
     window.clearInterval(resyncTimer);
+    window.cancelAnimationFrame(frame);
     if (alarmResetTimer !== null) window.clearTimeout(alarmResetTimer);
     disconnect();
     alarm.stop();

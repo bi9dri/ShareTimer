@@ -264,7 +264,6 @@ select {
   width: 0;
   border-radius: 2px;
   background: var(--muted);
-  transition: width 0.3s linear;
 }
 
 .session[data-status="running"] .progress__fill {

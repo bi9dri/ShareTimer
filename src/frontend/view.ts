@@ -19,9 +19,10 @@ const CONNECTION_LABELS: Record<ConnectionStatus, string> = {
 };
 
 const ALARM_SOUND_LABELS: Record<AlarmSound, string> = {
-  beep: "ビープ",
-  chime: "チャイム",
-  bell: "ベル",
+  alarm: "アラーム",
+  bell: "鐘",
+  piano: "ピアノ",
+  jingle: "ジングル",
 };
 
 /** Hold this long before the stepper starts repeating. */

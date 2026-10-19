@@ -61,7 +61,7 @@ DO が保持するセッション。
 | `durationMs` | number | 設定された長さ。最大 `MAX_DURATION` |
 | `endsAt` | number \| null | `running` のときのみ。終了予定 epoch ms |
 | `remainingMs` | number \| null | `paused` のときのみ。残り時間 |
-| `alarmSound` | string | プリセット ID |
+| `alarmSound` | string | プリセット ID（同梱音源。§7） |
 | `lastAdminOpAt` | number | 最後の管理操作時刻。TTL の起点 |
 | `createdAt` | number | 作成時刻 |
 
@@ -108,8 +108,9 @@ DO が保持するセッション。
 ## 7. アラーム
 
 - **全端末**が鳴らす。各端末が補正済み残り時間が 0 に達した時点で **1 回**再生し、停止もローカルで行う。サーバは再生・停止状態を管理しない（[ADR 0003](adr/0003-client-side-alarm.md)）。
-- **同時性を最優先**し、NTP 同期と Web Audio のスケジューリングで再生する（[ADR 0003](adr/0003-client-side-alarm.md)）。
+- **同時性を最優先**し、NTP 同期と Web Audio のスケジューリングで再生する。出力遅延の補正は行わない（[ADR 0003](adr/0003-client-side-alarm.md) / [ADR 0007](adr/0007-no-output-latency-compensation.md)）。
 - **音量**は各端末ローカルの設定（localStorage）。サーバへ送らない。
+- 音源は**同梱の WAV**（`public/alarm/`）で、ID は `alarm` / `bell` / `piano` / `jingle`。起動時に全件を `decodeAudioData` して常備し、期限直前のダウンロード待ちをなくす（[ADR 0006](adr/0006-bundled-alarm-audio-files.md)）。
 - 期限切れ後に接続した端末は、初回 `state` が `expired` でも鳴らさない。鳴らすのは `running` から期限切れへの遷移を見た端末だけ。
 
 ## 8. 管理者認可
@@ -145,3 +146,5 @@ DO が保持するセッション。
 - [ADR 0003: アラームは全端末がローカルに判定・再生・停止する](adr/0003-client-side-alarm.md)
 - [ADR 0004: 管理者トークンを localStorage に保存する](adr/0004-admin-token-localstorage.md)
 - [ADR 0005: Cloudflare Workers + Durable Objects で配信する](adr/0005-cloudflare-durable-objects-hosting.md)
+- [ADR 0006: アラーム音源は合成ではなく同梱の音声ファイルにする](adr/0006-bundled-alarm-audio-files.md)
+- [ADR 0007: アラームの出力遅延補正を廃止する](adr/0007-no-output-latency-compensation.md)

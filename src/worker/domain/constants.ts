@@ -10,8 +10,8 @@ export const SESSION_ID_LENGTH = 21;
 
 export const MAX_BODY_BYTES = 8 * 1024;
 
-export const ALARM_SOUNDS = ["beep", "chime", "bell"] as const;
+export const ALARM_SOUNDS = ["alarm", "bell", "piano", "jingle"] as const;
 
-export const DEFAULT_ALARM_SOUND = "beep";
+export const DEFAULT_ALARM_SOUND = "alarm";
 
 export type AlarmSound = (typeof ALARM_SOUNDS)[number];
