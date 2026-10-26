@@ -108,12 +108,53 @@ select {
   gap: 20px;
 }
 
-.landing__title {
+/* ---------- brand ---------- */
+/* The lockup is drawn as an alpha mask, so it inherits the surrounding ink. */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin: 0;
-  font-size: clamp(28px, 6vw, 34px);
-  font-weight: 200;
-  letter-spacing: 0.01em;
   color: var(--fg-strong);
+}
+
+.brand__mark,
+.brand__word {
+  display: block;
+  flex: none;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+.brand__mark {
+  width: 21px;
+  aspect-ratio: 1781 / 2048;
+  -webkit-mask-image: url("/logo.svg");
+  mask-image: url("/logo.svg");
+}
+
+.brand__word {
+  width: 104px;
+  aspect-ratio: 2048 / 299;
+  -webkit-mask-image: url("/wordmark.svg");
+  mask-image: url("/wordmark.svg");
+}
+
+.landing__brand {
+  gap: 18px;
+}
+
+.landing__brand .brand__mark {
+  width: 34px;
+}
+
+.landing__brand .brand__word {
+  width: clamp(150px, 48vw, 210px);
 }
 
 .landing__lead {
@@ -130,9 +171,12 @@ select {
 .bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   min-height: 18px;
+}
+
+.bar__brand {
+  margin-right: auto;
 }
 
 /* State rides on the timer and the progress line instead of a separate mark. */

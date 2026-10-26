@@ -110,6 +110,11 @@ export class SessionView {
     container.innerHTML = `
       <main id="session" class="session" data-status="idle" data-alarming="false">
         <header class="bar">
+          <h1 class="brand bar__brand">
+            <span class="brand__mark" aria-hidden="true"></span>
+            <span class="brand__word" aria-hidden="true"></span>
+            <span class="sr-only">ShareTimer</span>
+          </h1>
           <p id="status-label" class="status-label">待機中</p>
           <span id="connection" class="conn" data-status="connecting">
             <span class="conn__dot" aria-hidden="true"></span>

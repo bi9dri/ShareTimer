@@ -41,7 +41,11 @@ async function start(container: HTMLElement): Promise<void> {
 function renderLanding(container: HTMLElement): void {
   container.innerHTML = `
     <main class="landing">
-      <h1 class="landing__title">ShareTimer</h1>
+      <h1 class="brand landing__brand">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__word" aria-hidden="true"></span>
+        <span class="sr-only">ShareTimer</span>
+      </h1>
       <p class="landing__lead">
         複数の端末で同じカウントダウンを共有できます。アカウント登録は不要です。
       </p>
@@ -71,7 +75,11 @@ function renderLanding(container: HTMLElement): void {
 function renderNotFound(container: HTMLElement): void {
   container.innerHTML = `
     <main class="landing">
-      <h1 class="landing__title">ShareTimer</h1>
+      <h1 class="brand landing__brand">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__word" aria-hidden="true"></span>
+        <span class="sr-only">ShareTimer</span>
+      </h1>
       <p class="landing__lead">セッションが見つかりません。URL を確認してください。</p>
       <a class="button button--primary" href="/">新しいセッションを作成</a>
     </main>
