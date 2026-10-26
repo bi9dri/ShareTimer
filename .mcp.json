@@ -8,6 +8,18 @@
         "playwright",
         "run-test-mcp-server"
       ]
+    },
+    "earshot": {
+      "command": "C:\\Users\\zero2\\.local\\share\\earshot\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "earshot",
+        "mcp"
+      ],
+      "env": {
+        "EARSHOT_THREADS": "3",
+        "EARSHOT_HOME": "C:\\Users\\zero2\\.local\\share\\earshot\\.cache"
+      }
     }
   }
 }
