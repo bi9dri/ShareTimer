@@ -23,20 +23,20 @@ test.describe("timer", () => {
 
   test("counts down over time", async ({ page }) => {
     await createSession(page);
-    await startTimer(page, "1", "0");
-    await expect(remainingText(page)).toHaveText(/^(01:00|00:5\d)$/);
+    await startTimer(page, "0", "8");
+    await expect(remainingText(page)).toHaveText(/^00:0[6-8]$/);
 
-    await expect(remainingText(page)).toHaveText(/^00:[0-4]\d$/, { timeout: 20_000 });
+    await expect(remainingText(page)).toHaveText(/^00:0[0-4]$/, { timeout: 12_000 });
   });
 
   test("starts a timer with second granularity", async ({ page }) => {
     await createSession(page);
 
-    await startTimer(page, "0", "3");
+    await startTimer(page, "0", "2");
 
     await expect(sessionRoot(page)).toHaveAttribute("data-status", "running");
-    await expect(remainingText(page)).toHaveText(/^00:0[23]$/);
-    await expect(sessionRoot(page)).toHaveAttribute("data-alarming", "true", { timeout: 15_000 });
+    await expect(remainingText(page)).toHaveText(/^00:0[12]$/);
+    await expect(sessionRoot(page)).toHaveAttribute("data-alarming", "true", { timeout: 10_000 });
   });
 
   test("pauses and resumes without losing time", async ({ page }) => {
@@ -226,16 +226,16 @@ test.describe("start and repeat", () => {
 
   test("restarts from the full duration while paused", async ({ page }) => {
     await createSession(page);
-    await startTimer(page, "0", "10");
+    await startTimer(page, "0", "6");
 
-    await expect(remainingText(page)).toHaveText(/^00:0[4-6]$/, { timeout: 20_000 });
+    await expect(remainingText(page)).toHaveText(/^00:0[1-3]$/, { timeout: 15_000 });
     await page.getByRole("button", { name: "一時停止" }).click();
     await expect(sessionRoot(page)).toHaveAttribute("data-status", "paused");
 
     await page.getByRole("button", { name: "タイマーをリセットする" }).click();
 
     await expect(sessionRoot(page)).toHaveAttribute("data-status", "running");
-    await expect(remainingText(page)).toHaveText(/^00:(09|10)$/);
+    await expect(remainingText(page)).toHaveText(/^00:(05|06)$/);
   });
 
   test("restarts with the duration currently in the form", async ({ page }) => {
@@ -361,7 +361,7 @@ test.describe("alarm", () => {
 
   test("holds the alarm display until the clock reaches zero", async ({ page }) => {
     await createSession(page);
-    await startTimer(page, "0", "4");
+    await startTimer(page, "0", "2");
 
     // 00:01 is already inside the audio lead window; the display must stay normal.
     await expect(remainingText(page)).toHaveText("00:01");
