@@ -53,13 +53,18 @@ pnpm test       # vitest（Workers ランタイム内で Durable Object ごと�
 pnpm test:watch # ウォッチモード
 pnpm typecheck  # 型チェック（worker / client / tooling の 3 プロジェクト）
 pnpm e2e        # Playwright（ビルドと wrangler dev の起動を自動で行う）
+pnpm vrt        # Playwright のスクリーンショット比較（VRT）
 ```
 
-`pnpm e2e` は `tests/e2e/` を実行する。テスト計画は `specs/` に置く。
+`pnpm e2e` は `tests/e2e/` を実行する。テスト計画は `specs/` に置く。CI では `.github/workflows/ci.yml` が typecheck / test / e2e / vrt を実行する。
+
+### VRT
+
+`pnpm vrt` は `tests/vrt/` の画面を `tests/vrt/visual.spec.ts-snapshots/` のベースラインと比較する。ベースラインは OS・フォント・Chromium のビルドに依存するため、CI と同じ Linux 環境（Playwright のコンテナイメージ）で生成し、`-linux.png` をコミットする。更新は `pnpm vrt:update`。
 
 ### E2E エージェント
 
-Playwright 公式のテストエージェントを `.claude/agents/` に導入済み（`.mcp.json` の `playwright-test` MCP サーバ経由）。
+Playwright 公式のテストエージェントを `.claude/agents/`（Claude Code 用）と `.commandcode/agents/`（Command Code 用）に導入済み。どちらも `.mcp.json` の `playwright-test` MCP サーバ経由で動く。
 
 - `playwright-test-planner` — テスト計画を `specs/` に書く
 - `playwright-test-generator` — 計画から `tests/e2e/` のテストを生成する
@@ -77,3 +82,4 @@ Playwright 公式のテストエージェントを `.claude/agents/` に導入�
 | `tests/unit/` | 純粋ロジックのユニットテスト |
 | `tests/worker/` | Durable Object の統合テスト |
 | `tests/e2e/` | Playwright の E2E テスト |
+| `tests/vrt/` | Playwright の VRT（スクリーンショット比較） |
