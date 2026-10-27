@@ -11,11 +11,6 @@ import { chromium } from "@playwright/test";
 
 const INK = "#221F19";
 const BG = "#F8F5F1";
-const MUTED = "#706D68";
-const ACCENT = "#426D91";
-
-const FONT =
-  'system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", "Helvetica Neue", sans-serif';
 
 function parseMark(source) {
   const viewBoxes = [...source.matchAll(/viewBox="([^"]+)"/g)];
@@ -63,25 +58,13 @@ function ogHtml() {
     html, body { margin: 0; padding: 0; }
     .card {
       width: 1200px; height: 630px; background: ${BG};
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      font-family: ${FONT};
+      display: flex; align-items: center; justify-content: center; gap: 34px;
     }
-    .rule { width: 64px; height: 5px; border-radius: 999px; background: ${ACCENT}; margin-bottom: 46px; }
-    .lockup { display: flex; align-items: center; gap: 34px; }
-    .lockup svg { display: block; }
-    .tagline {
-      margin: 54px 0 0; font-size: 40px; font-weight: 500;
-      line-height: 1.4; letter-spacing: 0.02em; color: ${MUTED};
-    }
+    .card svg { display: block; }
   </style></head><body>
     <div class="card">
-      <div class="rule"></div>
-      <div class="lockup">
-        ${svg({ mark: logo, height: markHeight, width: markWidth })}
-        ${svg({ mark: wordmark, height: wordHeight, width: wordWidth })}
-      </div>
-      <p class="tagline">複数の端末で共有できるカウントダウンタイマー</p>
+      ${svg({ mark: logo, height: markHeight, width: markWidth })}
+      ${svg({ mark: wordmark, height: wordHeight, width: wordWidth })}
     </div>
   </body></html>`;
 }
