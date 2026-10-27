@@ -1,6 +1,6 @@
 # ShareTimer
 
-複数端末で共有できるカウントダウンタイマー。ユーザ管理は行わない。セッションを作成した端末が「管理者」となり、他は「ユーザ」として閲覧のみを行う。
+複数人で共有できるカウントダウンタイマー。ユーザ管理は行わない。セッションを作成した端末が「管理者」となり、他は「ユーザ」として閲覧のみを行う。
 
 ## 特徴
 
@@ -41,6 +41,7 @@ pnpm dev
 pnpm preview
 
 # favicon・アプリアイコン・OGP 画像を public/ に再生成する（logo.svg と wordmark.svg が元）
+# 初回だけブラウザが要る: pnpm exec playwright install chromium
 pnpm icons
 ```
 
@@ -70,7 +71,8 @@ Playwright 公式のテストエージェントを `.claude/agents/` に導入�
 | `src/worker/` | Worker のルーターと Durable Object |
 | `src/worker/domain/` | 状態遷移・バリデーション・トークンなどの純粋ロジック |
 | `src/frontend/` | 素の TypeScript クライアント |
-| `public/alarm/` | アラーム音のプリセット音源（WAV） |
+| `public/` | アラーム音源・favicon・OGP 画像・webmanifest |
+| `scripts/` | アイコンと OGP 画像の生成（`pnpm icons`） |
 | `tests/unit/` | 純粋ロジックのユニットテスト |
 | `tests/worker/` | Durable Object の統合テスト |
 | `tests/e2e/` | Playwright の E2E テスト |

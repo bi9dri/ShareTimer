@@ -77,7 +77,10 @@ test.describe("landing", () => {
 
   test("writes absolute urls into the social meta tags", async ({ page, baseURL }) => {
     const { id } = await createSession(page);
-    const url = `${baseURL}/s/${id}`;
+    // `$&` would be read as a replacement pattern by a plain replaceAll.
+    const path = `/s/${id}?x=$&`;
+    await page.goto(path);
+    const url = `${baseURL}${path}`;
     const meta = (name: string) =>
       page.locator(`meta[property="${name}"]`).getAttribute("content");
 
@@ -85,5 +88,15 @@ test.describe("landing", () => {
     expect(await meta("og:url")).toBe(url);
     expect(await meta("og:image")).toBe(`${baseURL}/og-image.png`);
     expect(await page.content()).not.toContain("{{");
+  });
+
+  test("writes absolute urls into the landing page meta tags", async ({ request, baseURL }) => {
+    const response = await request.get("/");
+    const html = await response.text();
+
+    expect(response.headers()["content-type"]).toContain("text/html");
+    expect(html).toContain(`<link rel="canonical" href="${baseURL}/" />`);
+    expect(html).toContain(`content="${baseURL}/og-image.png"`);
+    expect(html).not.toContain("{{");
   });
 });

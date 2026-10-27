@@ -1,7 +1,7 @@
 {
   "name": "ShareTimer",
   "short_name": "ShareTimer",
-  "description": "複数の端末で共有できるカウントダウンタイマー。",
+  "description": "複数人で共有できるカウントダウンタイマー。",
   "lang": "ja",
   "start_url": "/",
   "scope": "/",

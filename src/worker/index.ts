@@ -80,19 +80,31 @@ async function applyOpRequest(request: Request, stub: SessionStub): Promise<Resp
 const ORIGIN_PLACEHOLDER = "{{ORIGIN}}";
 const PATH_PLACEHOLDER = "{{PATH}}";
 
+function escapeAttribute(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
 /**
  * OGP and canonical URLs must be absolute, but the deployment host is not known
- * at build time. The page is served from a single HTML asset, so fill the
- * placeholders from the request instead of pinning a domain.
+ * at build time, so the placeholders are filled per request instead of pinning
+ * a domain.
  */
 async function withSiteMeta(response: Response, url: URL): Promise<Response> {
-  const contentType = response.headers.get("content-type") ?? "";
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
   if (!contentType.includes("text/html")) return response;
 
+  // A replacer function keeps `$&` and friends in the URL from being read as
+  // replacement patterns, which would leave the placeholder in the page.
   const html = (await response.text())
-    .replaceAll(ORIGIN_PLACEHOLDER, url.origin)
-    .replaceAll(PATH_PLACEHOLDER, url.pathname + url.search);
+    .replaceAll(ORIGIN_PLACEHOLDER, () => escapeAttribute(url.origin))
+    .replaceAll(PATH_PLACEHOLDER, () => escapeAttribute(url.pathname + url.search));
 
+  // The body no longer matches the asset, so its validators and length do not
+  // carry over; a stale etag would revalidate against the wrong bytes.
   const headers = new Headers(response.headers);
   headers.delete("content-length");
   headers.delete("content-encoding");
