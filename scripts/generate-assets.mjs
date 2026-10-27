@@ -1,5 +1,7 @@
 // Renders the icons and the OGP card from public/logo.svg and
-// public/wordmark.svg, so the raster assets stay derived from the source marks.
+// public/wordmark.svg, and copies the theme colours from style.css into
+// index.html and the web manifest. style.css is the single source of truth for
+// colour; nothing here hard-codes one.
 // The first run needs the browser: `pnpm exec playwright install chromium`.
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -8,9 +10,63 @@ import { chromium } from "@playwright/test";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const publicFile = (name) => join(ROOT, "public", name);
+const rootFile = (name) => join(ROOT, name);
 
-const INK = "#221F19";
-const BG = "#F8F5F1";
+/** CSS Color 4 conversion; icons and manifests need sRGB, not oklch. */
+function oklchToHex(color) {
+  const match = /^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)$/.exec(color);
+  if (match === null) throw new Error(`unsupported oklch(): ${color}`);
+
+  const [lightness, chroma, hue] = match.slice(1).map(Number);
+  const a = chroma * Math.cos((hue * Math.PI) / 180);
+  const b = chroma * Math.sin((hue * Math.PI) / 180);
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+
+  const channels = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
+  const hex = channels
+    .map((channel) => {
+      const srgb = channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055;
+      return Math.round(Math.min(1, Math.max(0, srgb)) * 255)
+        .toString(16)
+        .padStart(2, "0");
+    })
+    .join("");
+  return `#${hex.toUpperCase()}`;
+}
+
+function toHex(value) {
+  const color = value.trim();
+  if (/^#[0-9a-f]{6}$/i.test(color)) return color.toUpperCase();
+  if (color.startsWith("oklch(")) return oklchToHex(color);
+  throw new Error(`unsupported colour: ${color}`);
+}
+
+const style = await readFile(rootFile("src/frontend/style.css"), "utf8");
+
+function cssColor(variable) {
+  const match = new RegExp(`${variable}:\\s*([^;]+);`).exec(style);
+  if (match === null) throw new Error(`missing ${variable} in style.css`);
+  return toHex(match[1]);
+}
+
+const BG = cssColor("--bg");
+const INK = cssColor("--fg-strong");
+
+/** Rewrites one colour in a hand-written file; a stale copy is worse than a crash. */
+async function setColor(file, pattern, value) {
+  const path = rootFile(file);
+  const source = await readFile(path, "utf8");
+  if (source.match(pattern) === null) throw new Error(`${file}: no match for ${pattern}`);
+
+  const next = source.replace(pattern, (_, before, after) => `${before}${value}${after}`);
+  if (next !== source) await writeFile(path, next);
+}
 
 function parseMark(source, name) {
   const viewBox = [...source.matchAll(/viewBox="([^"]+)"/g)].at(-1)?.[1];
@@ -92,6 +148,13 @@ function buildIco(images) {
 
   return Buffer.concat([header, entries, ...images.map((image) => image.data)]);
 }
+
+await setColor("index.html", /(<meta name="theme-color" content=")[^"]*(")/, BG);
+await setColor(
+  "public/site.webmanifest",
+  /("(?:background_color|theme_color)": ")[^"]*(")/g,
+  BG,
+);
 
 const rounded = { radius: 0.21, markRatio: 0.62, transparent: true };
 

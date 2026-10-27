@@ -79,6 +79,7 @@ async function applyOpRequest(request: Request, stub: SessionStub): Promise<Resp
 
 const ORIGIN_PLACEHOLDER = "{{ORIGIN}}";
 const PATH_PLACEHOLDER = "{{PATH}}";
+const QUERY_PLACEHOLDER = "{{QUERY}}";
 
 function escapeAttribute(value: string): string {
   return value
@@ -88,39 +89,70 @@ function escapeAttribute(value: string): string {
     .replaceAll(">", "&gt;");
 }
 
+async function sha256(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
+}
+
+function matchesEtag(header: string | null, etag: string): boolean {
+  if (header === null) return false;
+  return header.split(",").some((candidate) => {
+    const tag = candidate.trim();
+    return tag === "*" || tag.replace(/^W\//, "") === etag;
+  });
+}
+
 /**
  * OGP and canonical URLs must be absolute, but the deployment host is not known
  * at build time, so the placeholders are filled per request instead of pinning
- * a domain.
+ * a domain. The query stays separate: it names no distinct page here, so
+ * canonical drops it while og:url keeps the URL that was actually shared.
  */
-async function withSiteMeta(response: Response, url: URL): Promise<Response> {
+async function withSiteMeta(request: Request, response: Response, url: URL): Promise<Response> {
   const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
   if (!contentType.includes("text/html")) return response;
+
+  // A HEAD carries no body to rewrite, and the asset's validator would not
+  // describe the GET representation, so it is dropped rather than reused.
+  if (request.method === "HEAD") {
+    const headers = new Headers(response.headers);
+    headers.delete("etag");
+    return new Response(null, { status: response.status, headers });
+  }
 
   // A replacer function keeps `$&` and friends in the URL from being read as
   // replacement patterns, which would leave the placeholder in the page.
   const html = (await response.text())
     .replaceAll(ORIGIN_PLACEHOLDER, () => escapeAttribute(url.origin))
-    .replaceAll(PATH_PLACEHOLDER, () => escapeAttribute(url.pathname + url.search));
+    .replaceAll(PATH_PLACEHOLDER, () => escapeAttribute(url.pathname))
+    .replaceAll(QUERY_PLACEHOLDER, () => escapeAttribute(url.search));
 
-  // The body no longer matches the asset, so its validators and length do not
-  // carry over; a stale etag would revalidate against the wrong bytes.
+  // The etag identifies the bytes sent, so it is derived from the rewritten
+  // HTML rather than inherited from the asset it came from.
+  const etag = `"${await sha256(html)}"`;
+
   const headers = new Headers(response.headers);
   headers.delete("content-length");
   headers.delete("content-encoding");
-  headers.delete("etag");
+  headers.set("etag", etag);
+
+  if (matchesEtag(request.headers.get("if-none-match"), etag)) {
+    return new Response(null, { status: 304, headers });
+  }
   return new Response(html, { status: response.status, headers });
 }
 
 async function serveAssets(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const response = await env.ASSETS.fetch(request);
-  if (response.status !== 404) return withSiteMeta(response, url);
+  if (response.status !== 404) return withSiteMeta(request, response, url);
 
   // Client-side routes such as /s/:id are not files; serve the app shell.
   const shell = new URL(url);
   shell.pathname = "/";
-  return withSiteMeta(await env.ASSETS.fetch(new Request(shell, request)), url);
+  return withSiteMeta(request, await env.ASSETS.fetch(new Request(shell, request)), url);
 }
 
 export default {
