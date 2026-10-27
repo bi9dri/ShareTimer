@@ -39,6 +39,9 @@ pnpm dev
 
 # クライアントを再ビルドせずサーバだけ起動する（`pnpm build:client` 済みのとき）
 pnpm preview
+
+# favicon・アプリアイコン・OGP 画像を public/ に再生成する（logo.svg と wordmark.svg が元）
+pnpm icons
 ```
 
 ## テスト

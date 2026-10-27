@@ -77,13 +77,38 @@ async function applyOpRequest(request: Request, stub: SessionStub): Promise<Resp
   }
 }
 
-async function serveAssets(request: Request, env: Env): Promise<Response> {
-  const response = await env.ASSETS.fetch(request);
-  if (response.status !== 404) return response;
+const ORIGIN_PLACEHOLDER = "{{ORIGIN}}";
+const PATH_PLACEHOLDER = "{{PATH}}";
 
+/**
+ * OGP and canonical URLs must be absolute, but the deployment host is not known
+ * at build time. The page is served from a single HTML asset, so fill the
+ * placeholders from the request instead of pinning a domain.
+ */
+async function withSiteMeta(response: Response, url: URL): Promise<Response> {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("text/html")) return response;
+
+  const html = (await response.text())
+    .replaceAll(ORIGIN_PLACEHOLDER, url.origin)
+    .replaceAll(PATH_PLACEHOLDER, url.pathname + url.search);
+
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  headers.delete("content-encoding");
+  headers.delete("etag");
+  return new Response(html, { status: response.status, headers });
+}
+
+async function serveAssets(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  url.pathname = "/";
-  return env.ASSETS.fetch(new Request(url, request));
+  const response = await env.ASSETS.fetch(request);
+  if (response.status !== 404) return withSiteMeta(response, url);
+
+  // Client-side routes such as /s/:id are not files; serve the app shell.
+  const shell = new URL(url);
+  shell.pathname = "/";
+  return withSiteMeta(await env.ASSETS.fetch(new Request(shell, request)), url);
 }
 
 export default {

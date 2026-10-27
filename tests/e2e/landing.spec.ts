@@ -74,4 +74,16 @@ test.describe("landing", () => {
     await expect(page).toHaveTitle("ShareTimer");
     await expect(page.locator("#share-url")).toHaveValue(new RegExp(`/s/${id}$`));
   });
+
+  test("writes absolute urls into the social meta tags", async ({ page, baseURL }) => {
+    const { id } = await createSession(page);
+    const url = `${baseURL}/s/${id}`;
+    const meta = (name: string) =>
+      page.locator(`meta[property="${name}"]`).getAttribute("content");
+
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", url);
+    expect(await meta("og:url")).toBe(url);
+    expect(await meta("og:image")).toBe(`${baseURL}/og-image.png`);
+    expect(await page.content()).not.toContain("{{");
+  });
 });
