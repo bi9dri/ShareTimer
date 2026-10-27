@@ -47,7 +47,7 @@ function renderLanding(container: HTMLElement): void {
         <span class="sr-only">ShareTimer</span>
       </h1>
       <p class="landing__lead">
-        複数の端末で同じカウントダウンを共有できます。アカウント登録は不要です。
+        複数人で同じカウントダウンを共有できます。アカウント登録は不要です。
       </p>
       <button id="create" class="button button--primary" type="button">セッションを作成</button>
       <p id="landing-message" class="message" hidden></p>

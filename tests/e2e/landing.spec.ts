@@ -74,4 +74,42 @@ test.describe("landing", () => {
     await expect(page).toHaveTitle("ShareTimer");
     await expect(page.locator("#share-url")).toHaveValue(new RegExp(`/s/${id}$`));
   });
+
+  test("writes absolute urls into the social meta tags", async ({ page, baseURL }) => {
+    const { id } = await createSession(page);
+    // `$&` would be read as a replacement pattern by a plain replaceAll.
+    const path = `/s/${id}?x=$&`;
+    await page.goto(path);
+    const meta = (name: string) =>
+      page.locator(`meta[property="${name}"]`).getAttribute("content");
+
+    // The query names no distinct page, so canonical leaves it out.
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      `${baseURL}/s/${id}`,
+    );
+    expect(await meta("og:url")).toBe(`${baseURL}${path}`);
+    expect(await meta("og:image")).toBe(`${baseURL}/og-image.png`);
+    expect(await page.content()).not.toContain("{{");
+  });
+
+  test("revalidates the rewritten page with its own etag", async ({ request }) => {
+    const first = await request.get("/");
+    const etag = first.headers()["etag"] ?? "";
+    expect(etag).toMatch(/^"[0-9a-f]{64}"$/);
+
+    const second = await request.get("/", { headers: { "if-none-match": etag } });
+    expect(second.status()).toBe(304);
+    expect(await second.text()).toBe("");
+  });
+
+  test("writes absolute urls into the landing page meta tags", async ({ request, baseURL }) => {
+    const response = await request.get("/");
+    const html = await response.text();
+
+    expect(response.headers()["content-type"]).toContain("text/html");
+    expect(html).toContain(`<link rel="canonical" href="${baseURL}/" />`);
+    expect(html).toContain(`content="${baseURL}/og-image.png"`);
+    expect(html).not.toContain("{{");
+  });
 });

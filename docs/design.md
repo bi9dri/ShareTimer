@@ -47,7 +47,7 @@
 ```
 
 - Worker がセッション ID を Durable Object にルーティングする（1 セッション = 1 DO）。DO が唯一の状態の源泉で、状態変化は接続中の全端末へ配信される。セッションごとに独立するため水平にスケールし、セッション間の調整は不要。
-- 状態は DO の SQLite storage に永続化する。静的ファイルは Cloudflare Pages から配信する。詳細は [ADR 0005](adr/0005-cloudflare-durable-objects-hosting.md)。
+- 状態は DO の SQLite storage に永続化する。静的アセットは Workers の Static Assets（`ASSETS` バインディング）から同一オリジンで配信する。HTML の OGP 用 URL はリクエスト元で埋めるため `/` は Worker を先に通す（[ADR 0008](adr/0008-ogp-absolute-urls-at-the-edge.md)）。詳細は [ADR 0005](adr/0005-cloudflare-durable-objects-hosting.md)。
 
 ## 4. データモデル
 
@@ -148,3 +148,4 @@ DO が保持するセッション。
 - [ADR 0005: Cloudflare Workers + Durable Objects で配信する](adr/0005-cloudflare-durable-objects-hosting.md)
 - [ADR 0006: アラーム音源は合成ではなく同梱の音声ファイルにする](adr/0006-bundled-alarm-audio-files.md)
 - [ADR 0007: アラームの出力遅延補正を廃止する](adr/0007-no-output-latency-compensation.md)
+- [ADR 0008: OGP の絶対 URL を Worker で埋める](adr/0008-ogp-absolute-urls-at-the-edge.md)

@@ -6,7 +6,11 @@
   "assets": {
     "directory": "dist/client",
     "binding": "ASSETS",
-    "not_found_handling": "none"
+    "not_found_handling": "none",
+    // The landing page is itself an asset, so without this the Worker never
+    // sees it and the HTML placeholders reach the browser unfilled. Every other
+    // route reaches the Worker on its own when no asset matches.
+    "run_worker_first": ["/"]
   },
   "durable_objects": {
     "bindings": [{ "name": "SESSION", "class_name": "SessionDurableObject" }]
