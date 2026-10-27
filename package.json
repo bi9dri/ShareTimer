@@ -13,6 +13,8 @@
     "test:watch": "vp test watch",
     "typecheck": "wrangler types && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "e2e": "pnpm run build:client && playwright test",
+    "vrt": "pnpm run build:client && playwright test -c playwright.vrt.config.ts",
+    "vrt:update": "pnpm run build:client && playwright test -c playwright.vrt.config.ts --update-snapshots",
     "assets": "node scripts/generate-assets.mjs",
     "cf-typegen": "wrangler types"
   },

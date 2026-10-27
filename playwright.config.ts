@@ -19,6 +19,7 @@ export default defineConfig({
     command: "pnpm run e2e:server",
     url: `${baseURL}/api/time?t0=0`,
     reuseExistingServer: !process.env["CI"],
+    gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
     timeout: 120_000,
   },
 });
