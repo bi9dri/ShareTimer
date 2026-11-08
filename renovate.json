@@ -1,5 +1,17 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
-  "minimumReleaseAge": "7 days"
+  "minimumReleaseAge": "7 days",
+  "packageRules": [
+    {
+      "description": "Group Node runtime and @types/node updates together",
+      "matchPackageNames": ["node", "@types/node"],
+      "groupName": "node"
+    },
+    {
+      "description": "Group pnpm updates across .mise.toml and package.json",
+      "matchPackageNames": ["pnpm"],
+      "groupName": "pnpm"
+    }
+  ]
 }
