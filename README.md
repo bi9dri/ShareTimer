@@ -62,9 +62,9 @@ pnpm vrt        # Playwright のスクリーンショット比較（VRT）
 
 `pnpm vrt` は `tests/vrt/` の画面を `tests/vrt/visual.spec.ts-snapshots/` のベースラインと比較する。ベースラインは OS・フォント・Chromium のビルドに依存するため、CI と同じ Linux 環境（Playwright のコンテナイメージ）で生成し、`-linux.png` をコミットする。更新は `pnpm vrt:update`。
 
-### E2E エージェント
+### E2E スキル
 
-Playwright 公式のテストエージェントを `.claude/agents/`（Claude Code 用）と `.commandcode/agents/`（Command Code 用）に導入済み。どちらも `.mcp.json` の `playwright-test` MCP サーバ経由で動く。
+Playwright 公式のテストスキルを `.agents/skills/` に導入済み。`.agents/mcp_config.json` の `playwright-test` MCP サーバ経由で動く。
 
 - `playwright-test-planner` — テスト計画を `specs/` に書く
 - `playwright-test-generator` — 計画から `tests/e2e/` のテストを生成する
