@@ -14,6 +14,11 @@
       "description": "Group pnpm updates across .mise.toml and package.json",
       "matchPackageNames": ["pnpm"],
       "groupName": "pnpm"
+    },
+    {
+      "description": "Group Playwright package and CI container image updates together",
+      "matchPackageNames": ["@playwright/test", "playwright", "playwright-core", "mcr.microsoft.com/playwright"],
+      "groupName": "playwright"
     }
   ]
 }
