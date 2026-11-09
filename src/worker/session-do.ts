@@ -26,7 +26,7 @@ export class SessionDurableObject extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
-    ctx.blockConcurrencyWhile(async () => {
+    void ctx.blockConcurrencyWhile(async () => {
       const session = await this.load();
       if (session !== null && (await ctx.storage.getAlarm()) === null) {
         await ctx.storage.setAlarm(nextAlarmAt(session));
