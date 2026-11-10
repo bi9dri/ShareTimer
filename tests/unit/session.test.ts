@@ -89,14 +89,49 @@ it("resume rebuilds endsAt from the frozen remaining time", () => {
 });
 
 it("rejects pause unless running", () => {
-  const result = applyOp(newSession(), { type: "pause" }, T0);
-  expect(result).toMatchObject({ ok: false, status: 409 });
+  expect(applyOp(newSession(), { type: "pause" }, T0)).toEqual({
+    ok: false,
+    status: 409,
+    message: "pause requires a running timer",
+  });
+  const brokenRunning = { ...newSession(), status: "running" as const, endsAt: null };
+  expect(applyOp(brokenRunning, { type: "pause" }, T0)).toEqual({
+    ok: false,
+    status: 409,
+    message: "pause requires a running timer",
+  });
+  const nonRunningWithEndsAt = { ...newSession(), status: "paused" as const, endsAt: T0 + 10_000 };
+  expect(applyOp(nonRunningWithEndsAt, { type: "pause" }, T0)).toEqual({
+    ok: false,
+    status: 409,
+    message: "pause requires a running timer",
+  });
 });
 
 it("rejects resume unless paused", () => {
   const running = run(newSession(), { type: "set", durationMs: 1_000 }, T0);
-  expect(applyOp(running, { type: "resume" }, T0)).toMatchObject({ ok: false, status: 409 });
-  expect(applyOp(newSession(), { type: "resume" }, T0)).toMatchObject({ ok: false, status: 409 });
+  expect(applyOp(running, { type: "resume" }, T0)).toEqual({
+    ok: false,
+    status: 409,
+    message: "resume requires a paused timer",
+  });
+  expect(applyOp(newSession(), { type: "resume" }, T0)).toEqual({
+    ok: false,
+    status: 409,
+    message: "resume requires a paused timer",
+  });
+  const brokenPaused = { ...newSession(), status: "paused" as const, remainingMs: null };
+  expect(applyOp(brokenPaused, { type: "resume" }, T0)).toEqual({
+    ok: false,
+    status: 409,
+    message: "resume requires a paused timer",
+  });
+  const nonPausedWithRemainingMs = { ...newSession(), status: "running" as const, remainingMs: 10_000 };
+  expect(applyOp(nonPausedWithRemainingMs, { type: "resume" }, T0)).toEqual({
+    ok: false,
+    status: 409,
+    message: "resume requires a paused timer",
+  });
 });
 
 it("extend pushes endsAt forward while running", () => {
@@ -113,9 +148,22 @@ it("extend never pushes the end beyond MAX_DURATION from now", () => {
 });
 
 it("rejects extend unless running", () => {
-  expect(applyOp(newSession(), { type: "extend", deltaMs: 1_000 }, T0)).toMatchObject({
+  expect(applyOp(newSession(), { type: "extend", deltaMs: 1_000 }, T0)).toEqual({
     ok: false,
     status: 409,
+    message: "extend requires a running timer",
+  });
+  const brokenRunning = { ...newSession(), status: "running" as const, endsAt: null };
+  expect(applyOp(brokenRunning, { type: "extend", deltaMs: 1_000 }, T0)).toEqual({
+    ok: false,
+    status: 409,
+    message: "extend requires a running timer",
+  });
+  const nonRunningWithEndsAt = { ...newSession(), status: "paused" as const, endsAt: T0 + 10_000 };
+  expect(applyOp(nonRunningWithEndsAt, { type: "extend", deltaMs: 1_000 }, T0)).toEqual({
+    ok: false,
+    status: 409,
+    message: "extend requires a running timer",
   });
 });
 
@@ -134,6 +182,9 @@ it("expires exactly at endsAt and clears the running fields", () => {
   expect(due.status).toBe("expired");
   expect(due.endsAt).toBeNull();
   expect(due.remainingMs).toBeNull();
+
+  const brokenRunning = { ...running, endsAt: null };
+  expect(expireIfDue(brokenRunning, T0 + 2_000)).toBe(brokenRunning);
 });
 
 it("does not expire a paused or idle session", () => {
@@ -144,12 +195,21 @@ it("does not expire a paused or idle session", () => {
   );
   expect(expireIfDue(paused, T0 + 10_000).status).toBe("paused");
   expect(expireIfDue(newSession(), T0 + 10_000).status).toBe("idle");
+
+  const nonRunningWithEndsAt = { ...newSession(), status: "paused" as const, endsAt: T0 + 100 };
+  expect(expireIfDue(nonRunningWithEndsAt, T0 + 500)).toBe(nonRunningWithEndsAt);
 });
 
 it("schedules the earliest of expiry and ttl deletion", () => {
   const running = run(newSession(), { type: "set", durationMs: 60_000 }, T0);
   expect(nextAlarmAt(running)).toBe(T0 + 60_000);
   expect(nextAlarmAt(newSession())).toBe(T0 + SESSION_TTL_MS + TTL_MARGIN_MS);
+
+  const brokenRunning = { ...running, endsAt: null };
+  expect(nextAlarmAt(brokenRunning)).toBe(T0 + SESSION_TTL_MS + TTL_MARGIN_MS);
+
+  const nonRunningWithEndsAt = { ...newSession(), status: "paused" as const, endsAt: T0 + 100 };
+  expect(nextAlarmAt(nonRunningWithEndsAt)).toBe(T0 + SESSION_TTL_MS + TTL_MARGIN_MS);
 });
 
 it("keeps the ttl deletion strictly after a max-length timer expires", () => {
@@ -197,3 +257,25 @@ it("exposes remainingMs only while paused", () => {
   expect(state.endsAt).toBeNull();
   expect(state.remainingMs).toBe(40_000);
 });
+
+it("keeps endsAt and remainingMs null when idle or expired", () => {
+  const idleState = toPublicState(newSession(), T0);
+  expect(idleState.status).toBe("idle");
+  expect(idleState.endsAt).toBeNull();
+  expect(idleState.remainingMs).toBeNull();
+
+  const running = run(newSession(), { type: "set", durationMs: 1_000 }, T0);
+  const expired = expireIfDue(running, T0 + 1_000);
+  const expiredState = toPublicState(expired, T0 + 2_000);
+  expect(expiredState.status).toBe("expired");
+  expect(expiredState.endsAt).toBeNull();
+  expect(expiredState.remainingMs).toBeNull();
+
+  // Guard against non-running states retaining endsAt or non-paused retaining remainingMs
+  const idleWithEndsAt = { ...newSession(), endsAt: T0 + 5_000 };
+  expect(toPublicState(idleWithEndsAt, T0).endsAt).toBeNull();
+
+  const runningWithRemainingMs = { ...running, remainingMs: 5_000 };
+  expect(toPublicState(runningWithRemainingMs, T0).remainingMs).toBeNull();
+});
+
