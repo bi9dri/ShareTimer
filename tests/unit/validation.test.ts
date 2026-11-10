@@ -30,9 +30,12 @@ it("rejects out-of-range durations", () => {
 });
 
 it("parses pause, resume and setAlarmSound", () => {
-  expect(parseOp({ type: "pause" }).ok).toBe(true);
-  expect(parseOp({ type: "resume" }).ok).toBe(true);
-  expect(parseOp({ type: "setAlarmSound", alarmSound: "bell" }).ok).toBe(true);
+  expect(parseOp({ type: "pause" })).toEqual({ ok: true, op: { type: "pause" } });
+  expect(parseOp({ type: "resume" })).toEqual({ ok: true, op: { type: "resume" } });
+  expect(parseOp({ type: "setAlarmSound", alarmSound: "bell" })).toEqual({
+    ok: true,
+    op: { type: "setAlarmSound", alarmSound: "bell" },
+  });
 });
 
 it("parses an extend op with a positive integer delta", () => {
@@ -43,23 +46,53 @@ it("parses an extend op with a positive integer delta", () => {
 });
 
 it("rejects a non-positive or fractional delta", () => {
-  for (const deltaMs of [0, -1, 0.5, Number.POSITIVE_INFINITY]) {
-    expect(parseOp({ type: "extend", deltaMs }).ok).toBe(false);
+  for (const deltaMs of [0, -1, 0.5, Number.POSITIVE_INFINITY, "5000", null]) {
+    expect(parseOp({ type: "extend", deltaMs })).toEqual({
+      ok: false,
+      status: 422,
+      message: "deltaMs must be a positive integer",
+    });
   }
 });
 
 it("rejects an unknown alarm sound", () => {
-  expect(parseOp({ type: "set", durationMs: 1_000, alarmSound: "siren" }).ok).toBe(false);
-  expect(parseOp({ type: "setAlarmSound", alarmSound: "siren" }).ok).toBe(false);
+  expect(parseOp({ type: "set", durationMs: 1_000, alarmSound: "siren" })).toEqual({
+    ok: false,
+    status: 422,
+    message: "alarmSound is not a known preset",
+  });
+  expect(parseOp({ type: "set", durationMs: 1_000, alarmSound: 123 })).toEqual({
+    ok: false,
+    status: 422,
+    message: "alarmSound is not a known preset",
+  });
+  expect(parseOp({ type: "setAlarmSound", alarmSound: "siren" })).toEqual({
+    ok: false,
+    status: 422,
+    message: "alarmSound is not a known preset",
+  });
+  expect(parseOp({ type: "setAlarmSound", alarmSound: false })).toEqual({
+    ok: false,
+    status: 422,
+    message: "alarmSound is not a known preset",
+  });
 });
 
 it("rejects an unknown op type", () => {
-  expect(parseOp({ type: "reset" }).ok).toBe(false);
+  expect(parseOp({ type: "reset" })).toEqual({
+    ok: false,
+    status: 422,
+    message: "unknown op type",
+  });
 });
 
 it("rejects bodies that are not objects", () => {
   for (const body of [null, undefined, "set", 42, [], true]) {
-    expect(parseOp(body).ok).toBe(false);
+    expect(parseOp(body)).toEqual({
+      ok: false,
+      status: 422,
+      message: "body must be a JSON object",
+    });
   }
 });
 
