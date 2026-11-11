@@ -1,4 +1,4 @@
-﻿# ShareTimer - AI Instructions
+# ShareTimer - AI Instructions
 
 ShareTimer はリアルタイム共有タイマーアプリケーションです（Cloudflare Workers + Vite / React + Playwright）。
 
@@ -15,3 +15,4 @@ ShareTimer はリアルタイム共有タイマーアプリケーションです
 - コード変更後は `pnpm typecheck` および `pnpm test` が通過することを確認すること。
 - 音声の確認・検証には `earshot` スキルを活用すること。
 - テスト作成・修復には `playwright-test-*` スキルを活用すること。
+- Web標準のUI・CSS・アクセシビリティ実装には `modern-web-guidance` スキルを活用すること。
