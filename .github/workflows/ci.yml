@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v6.1.1
       - uses: actions/setup-node@v7.1.0
         with:
@@ -29,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v6.1.1
       - uses: actions/setup-node@v7.1.0
         with:
@@ -45,6 +49,8 @@ jobs:
       options: --user 1001
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v6.1.1
       - run: pnpm install --frozen-lockfile
       - run: pnpm e2e
@@ -65,6 +71,8 @@ jobs:
       options: --user 1001
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v6.1.1
       - run: pnpm install --frozen-lockfile
       - run: pnpm vrt
