@@ -116,12 +116,10 @@ test.describe("timer", () => {
     await createSession(page);
     const value = (selector: string) => page.locator(selector).inputValue();
 
-    // 5:00 - 1s -> 4:59
     await page.getByRole("button", { name: "秒を1つ減らす" }).click();
     expect(await value("#duration-minutes")).toBe("4");
     expect(await value("#duration-seconds")).toBe("59");
 
-    // 4:59 + 1s -> 5:00
     await page.getByRole("button", { name: "秒を1つ増やす" }).click();
     expect(await value("#duration-minutes")).toBe("5");
     expect(await value("#duration-seconds")).toBe("0");
@@ -134,7 +132,6 @@ test.describe("timer", () => {
     await page.getByRole("button", { name: "分を1つ増やす" }).click();
     expect(await page.locator("#duration-minutes").inputValue()).toBe("1440");
 
-    // The seconds field cannot borrow below 0:00.
     await page.locator("#duration-minutes").fill("0");
     await page.getByRole("button", { name: "秒を1つ減らす" }).click();
     expect(await page.locator("#duration-minutes").inputValue()).toBe("0");
@@ -151,7 +148,6 @@ test.describe("timer", () => {
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
 
-    // Below the hold threshold the press still counts as a single step.
     await page.waitForTimeout(150);
     expect(await seconds.inputValue()).toBe("1");
 
@@ -351,7 +347,6 @@ test.describe("alarm", () => {
     for (const page of [adminPage, viewerPage]) {
       await expect(sessionRoot(page)).toHaveAttribute("data-alarming", "true", { timeout: 15_000 });
       await expect(remainingText(page)).toHaveText("00:00");
-      // The alarm rings once and stops on its own; there is nothing to dismiss.
       await expect(page.locator("#alarming")).toHaveCount(0);
     }
 
@@ -363,14 +358,12 @@ test.describe("alarm", () => {
     await createSession(page);
     await startTimer(page, "0", "2");
 
-    // 00:01 is already inside the audio lead window; the display must stay normal.
     await expect(remainingText(page)).toHaveText("00:01");
     await expect(sessionRoot(page)).toHaveAttribute("data-alarming", "false");
 
     await expect(sessionRoot(page)).toHaveAttribute("data-alarming", "true", { timeout: 15_000 });
     await expect(remainingText(page)).toHaveText("00:00");
 
-    // The progress line must not lag the clock: its width changes instantly.
     await expect(page.locator("#progress")).toHaveCSS("transition-duration", "0s");
     await expect(page.locator("#progress")).toHaveCSS("width", "0px");
   });
@@ -388,7 +381,6 @@ test.describe("alarm", () => {
 
     await expect(sessionRoot(page)).toHaveAttribute("data-alarming", "true", { timeout: 15_000 });
 
-    // The alarm clears itself without any user action.
     await expect(sessionRoot(page)).toHaveAttribute("data-alarming", "false", { timeout: 15_000 });
     await expect(sessionRoot(page)).toHaveAttribute("data-status", "expired");
   });

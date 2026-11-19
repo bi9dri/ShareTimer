@@ -181,12 +181,10 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
     view().setAlarming(false);
   }
 
-  /** Schedules the sound so it lands on the boundary; it does not touch the display. */
   function armAlarm(remaining: number): void {
     alarm.play(state.alarmSound, scheduleOffsetSeconds(remaining));
   }
 
-  /** Flips the alarm display, exactly when the clock reads zero. */
   function showAlarm(): void {
     if (alarmShown) return;
     alarmShown = true;
@@ -214,8 +212,6 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
     const remaining = computeRemaining(state);
     view().setRemaining(remaining);
 
-    // An expiring timer may reach the client before this tick sees zero. Only a
-    // client that armed the alarm watches the run, so a late joiner stays silent.
     if (state.status === "expired") {
       if (gate.scheduled) showAlarm();
       return;
@@ -225,7 +221,6 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
     const decision = evaluateAlarm(gate, state, remaining);
     gate = decision.gate;
     if (decision.fire) armAlarm(remaining);
-    // The frame loop paints the display; this covers a hidden tab, where rAF stops.
     if (remaining <= 0) showAlarm();
     maybeResync(remaining, state);
   }
@@ -233,9 +228,6 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
   function applyState(next: PublicState): void {
     const previousEndsAt = state.endsAt;
     state = next;
-    // A pause leaves the scheduled source running until its old deadline, and a
-    // reschedule replaces it. Expiry must not stop it: that state arrives as the
-    // alarm starts.
     const paused = next.status === "paused";
     const rescheduled = next.status === "running" && next.endsAt !== previousEndsAt;
     if (paused || rescheduled) {
@@ -255,9 +247,6 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
   view().setState(initial);
   tick();
 
-  // Painting runs at frame rate so the progress line moves smoothly while a
-  // countdown is live. Arming the alarm stays on the interval below: rAF stops
-  // in a hidden tab.
   const paint = (): void => {
     frame = 0;
     if (state.status !== "running") return;
@@ -295,7 +284,6 @@ async function renderSession(container: HTMLElement, sessionId: string): Promise
   });
 
   window.addEventListener("pageshow", (event) => {
-    // A bfcache restore brings back dead timers and sockets; reload to rejoin.
     if (event.persisted) location.reload();
   });
 

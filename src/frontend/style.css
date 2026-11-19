@@ -1,7 +1,6 @@
 :root {
   color-scheme: light;
 
-  /* Fonts stay system-local: this app deliberately ships no external assets. */
   --font-ui:
     system-ui,
     -apple-system,
@@ -98,7 +97,6 @@ select {
   max-width: 560px;
   display: flex;
   flex-direction: column;
-  /* auto margins keep the content centred without clipping when it grows. */
   margin: auto;
 }
 
@@ -108,8 +106,6 @@ select {
   gap: 20px;
 }
 
-/* ---------- brand ---------- */
-/* The lockup is drawn as an alpha mask, so it inherits the surrounding ink. */
 .brand {
   display: flex;
   align-items: center;
@@ -163,7 +159,6 @@ select {
   color: var(--muted);
 }
 
-/* ---------- session ---------- */
 .session {
   gap: 26px;
 }
@@ -179,7 +174,6 @@ select {
   margin-right: auto;
 }
 
-/* State rides on the timer and the progress line instead of a separate mark. */
 .status-label {
   margin: 0;
   font-size: 12px;
@@ -193,7 +187,6 @@ select {
   opacity: 1;
 }
 
-/* The mark alone carries the state; the words appear on hover. */
 .conn {
   position: relative;
   display: inline-flex;
@@ -269,7 +262,6 @@ select {
   }
 }
 
-/* ---------- timer ---------- */
 .stage {
   display: flex;
   flex-direction: column;
@@ -322,7 +314,6 @@ select {
   background: var(--alarm);
 }
 
-/* ---------- share ---------- */
 .share {
   display: flex;
   align-items: center;
@@ -342,7 +333,6 @@ select {
   letter-spacing: 0.01em;
 }
 
-/* ---------- admin ---------- */
 .admin {
   display: flex;
   flex-direction: column;
@@ -530,7 +520,6 @@ select {
   border: 1.5px solid var(--fg);
 }
 
-/* ---------- buttons ---------- */
 .button,
 .icon-button {
   display: inline-flex;
@@ -599,7 +588,6 @@ select {
   color: var(--fg-strong);
 }
 
-/* One control, two glyphs: the action it will run is the opaque one. */
 .icon-button--wide {
   width: auto;
   padding: 0 10px;
@@ -632,7 +620,6 @@ select {
   background: var(--hover-2);
 }
 
-/* A floating notice: it must never push the layout around. */
 .message {
   position: fixed;
   left: 50%;

@@ -164,9 +164,7 @@ export function connectSession(sessionId: string, events: ConnectionEvents): () 
       scheduleReconnect();
     });
 
-    next.addEventListener("error", () => {
-      // The close event that follows drives the reconnect.
-    });
+    next.addEventListener("error", () => {});
   }
 
   async function poll(): Promise<void> {
@@ -180,9 +178,7 @@ export function connectSession(sessionId: string, events: ConnectionEvents): () 
       if (!response.ok) return;
       const body = (await response.json()) as { state: PublicState };
       events.onState(body.state);
-    } catch {
-      // Transient network failure; the next tick retries.
-    }
+    } catch {}
   }
 
   function startPolling(): void {
@@ -213,9 +209,7 @@ export function connectSession(sessionId: string, events: ConnectionEvents): () 
     if (current !== null) {
       try {
         current.close();
-      } catch {
-        // Already closed.
-      }
+      } catch {}
     }
   }
 

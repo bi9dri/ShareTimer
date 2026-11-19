@@ -271,7 +271,6 @@ it("keeps endsAt and remainingMs null when idle or expired", () => {
   expect(expiredState.endsAt).toBeNull();
   expect(expiredState.remainingMs).toBeNull();
 
-  // Guard against non-running states retaining endsAt or non-paused retaining remainingMs
   const idleWithEndsAt = { ...newSession(), endsAt: T0 + 5_000 };
   expect(toPublicState(idleWithEndsAt, T0).endsAt).toBeNull();
 

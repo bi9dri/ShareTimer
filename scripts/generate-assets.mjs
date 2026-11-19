@@ -1,8 +1,3 @@
-// Renders the icons and the OGP card from public/logo.svg and
-// public/wordmark.svg, and copies the theme colours from style.css into
-// index.html and the web manifest. style.css is the single source of truth for
-// colour; nothing here hard-codes one.
-// The first run needs the browser: `pnpm exec playwright install chromium`.
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,7 +7,6 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const publicFile = (name) => join(ROOT, "public", name);
 const rootFile = (name) => join(ROOT, name);
 
-/** CSS Color 4 conversion; icons and manifests need sRGB, not oklch. */
 function oklchToHex(color) {
   const match = /^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)$/.exec(color);
   if (match === null) throw new Error(`unsupported oklch(): ${color}`);
@@ -58,7 +52,6 @@ function cssColor(variable) {
 const BG = cssColor("--bg");
 const INK = cssColor("--fg-strong");
 
-/** Rewrites one colour in a hand-written file; a stale copy is worse than a crash. */
 async function setColor(file, pattern, value) {
   const path = rootFile(file);
   const source = await readFile(path, "utf8");
@@ -75,7 +68,6 @@ function parseMark(source, name) {
   const paths = [...source.matchAll(/<path\b[^>]*\/>/g)]
     .map((match) => match[0].replace(/\sfill=(?:"[^"]*"|'[^']*')/g, ""))
     .join("");
-  // An empty mark would silently overwrite every icon with a blank badge.
   if (paths === "") throw new Error(`no <path> in ${name}`);
 
   const [, , width, height] = viewBox.split(/[\s,]+/).map(Number);
@@ -176,14 +168,12 @@ try {
     });
   }
 
-  // A small badge needs a relatively larger mark to stay legible.
   const faviconRatios = { 16: 0.68, 32: 0.66, 48: 0.64 };
   const favicon = {};
   for (const [size, markRatio] of Object.entries(faviconRatios)) {
     favicon[size] = await renderBadge(Number(size), { ...rounded, markRatio });
   }
 
-  // 16 and 48 ship inside the ICO; only 32 is referenced from index.html.
   await writeFile(publicFile("favicon-32x32.png"), favicon[32]);
   await writeFile(
     publicFile("favicon.ico"),
@@ -193,12 +183,10 @@ try {
   await writeFile(publicFile("icon-192.png"), await renderBadge(192, { ...rounded, markRatio: 0.6 }));
   await writeFile(publicFile("icon-512.png"), await renderBadge(512, { ...rounded, markRatio: 0.6 }));
 
-  // iOS fills transparent pixels with black.
   await writeFile(
     publicFile("apple-touch-icon.png"),
     await renderBadge(180, { radius: 0, markRatio: 0.58, transparent: false }),
   );
-  // Platforms crop maskable icons, so the mark stays inside the safe circle.
   await writeFile(
     publicFile("icon-maskable-512.png"),
     await renderBadge(512, { radius: 0, markRatio: 0.46, transparent: false }),

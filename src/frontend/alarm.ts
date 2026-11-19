@@ -32,15 +32,10 @@ export function evaluateAlarm(
   return { gate: { generation, scheduled }, fire: false };
 }
 
-/** Seconds from now until the deadline. The sound starts on the boundary itself. */
 export function scheduleOffsetSeconds(remaining: number): number {
   return Math.max(0, remaining) / 1000;
 }
 
-/**
- * URL of each bundled preset. They are preloaded at startup so a scheduled
- * start never waits on a fetch (ADR 0006).
- */
 export const ALARM_SOURCES: Record<AlarmSound, string> = {
   alarm: "/alarm/alarm.wav",
   bell: "/alarm/bell.wav",
@@ -116,15 +111,10 @@ export class WebAudioAlarm implements AlarmPlayer {
     return this.context !== null && this.context.state === "running";
   }
 
-  /**
-   * Fetches and decodes every preset up front. Decoding needs no user gesture,
-   * so a scheduled start never waits on a download (ADR 0006).
-   */
   async preload(): Promise<void> {
     await Promise.all(ALARM_SOUNDS.map((sound) => this.load(sound)));
   }
 
-  /** Fetches and decodes one preset. Failures are not cached, so a retry can succeed. */
   private load(sound: AlarmSound): Promise<AudioBuffer | null> {
     const ready = this.buffers.get(sound);
     if (ready !== undefined) return Promise.resolve(ready);
@@ -166,8 +156,6 @@ export class WebAudioAlarm implements AlarmPlayer {
       this.start(sound, offsetSeconds);
       return;
     }
-    // Still decoding (for example, a page loaded inside the lead window):
-    // sound it as soon as it is ready rather than dropping the alarm.
     void this.load(sound).then((buffer) => {
       if (buffer !== null) this.start(sound, 0);
     });
@@ -184,7 +172,6 @@ export class WebAudioAlarm implements AlarmPlayer {
     const source = context.createBufferSource();
     source.buffer = buffer;
     source.connect(master);
-    // Scheduled on the audio clock, so the deadline is hit regardless of timer jitter.
     source.start(context.currentTime + Math.max(0, offsetSeconds));
     this.active.push(source);
   }
@@ -193,9 +180,7 @@ export class WebAudioAlarm implements AlarmPlayer {
     for (const source of this.active) {
       try {
         source.stop();
-      } catch {
-        // Already stopped.
-      }
+      } catch {}
     }
     this.active = [];
   }

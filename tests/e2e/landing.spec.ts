@@ -77,13 +77,11 @@ test.describe("landing", () => {
 
   test("writes absolute urls into the social meta tags", async ({ page, baseURL }) => {
     const { id } = await createSession(page);
-    // `$&` would be read as a replacement pattern by a plain replaceAll.
     const path = `/s/${id}?x=$&`;
     await page.goto(path);
     const meta = (name: string) =>
       page.locator(`meta[property="${name}"]`).getAttribute("content");
 
-    // The query names no distinct page, so canonical leaves it out.
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       "href",
       `${baseURL}/s/${id}`,
