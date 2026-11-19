@@ -38,7 +38,6 @@ async function waitForLive(page: Page): Promise<void> {
   await expect(page.locator("#connection")).toHaveAttribute("data-status", "online");
 }
 
-/** The session id is random; pin the share field so the screenshot stays stable. */
 async function pinShareUrl(page: Page): Promise<void> {
   const { origin } = new URL(page.url());
   await page.locator("#share-url").evaluate(

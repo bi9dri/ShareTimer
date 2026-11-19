@@ -123,7 +123,6 @@ export function toPublicState(session: Session, serverTime: number): PublicState
     durationMs: session.durationMs,
     endsAt: session.status === "running" ? session.endsAt : null,
     remainingMs: session.status === "paused" ? session.remainingMs : null,
-    // Sessions created before the bundled presets still hold an old ID.
     alarmSound: (ALARM_SOUNDS as readonly string[]).includes(session.alarmSound)
       ? session.alarmSound
       : DEFAULT_ALARM_SOUND,

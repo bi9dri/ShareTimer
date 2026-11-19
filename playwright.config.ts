@@ -6,7 +6,6 @@ const baseURL = `http://127.0.0.1:${PORT}`;
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
-  // The container reports few CPUs, so the default 50% rounds down to one worker.
   workers: process.env["CI"] ? 2 : undefined,
   forbidOnly: !!process.env["CI"],
   retries: process.env["CI"] ? 2 : 0,

@@ -140,16 +140,12 @@ export class SessionDurableObject extends DurableObject<Env> {
   private sendQuietly(ws: WebSocket, payload: string): void {
     try {
       ws.send(payload);
-    } catch {
-      // The socket is already gone; nothing to do.
-    }
+    } catch {}
   }
 
   private closeQuietly(ws: WebSocket, code: number, reason: string): void {
     try {
       ws.close(code, reason);
-    } catch {
-      // The socket is already gone; nothing to do.
-    }
+    } catch {}
   }
 }

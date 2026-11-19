@@ -25,10 +25,8 @@ const ALARM_SOUND_LABELS: Record<AlarmSound, string> = {
   jingle: "ジングル",
 };
 
-/** Hold this long before the stepper starts repeating. */
 const STEP_HOLD_DELAY_MS = 400;
 
-/** Repeat interval once the hold delay has elapsed. */
 const STEP_REPEAT_MS = 60;
 
 const MESSAGE_TIMEOUT_MS = 4_000;
@@ -262,7 +260,6 @@ export class SessionView {
     this.root.dataset["status"] = state.status;
     this.statusLabel.textContent = STATUS_LABELS[state.status];
     this.alarmSound.value = state.alarmSound;
-    // The form mirrors the session, so restarting reproduces what is on screen.
     if (state.durationMs > 0 && state.durationMs !== previousDurationMs) {
       this.writeDuration(state.durationMs);
     }
@@ -310,7 +307,6 @@ export class SessionView {
     this.volume.style.setProperty("--fill", `${this.volume.value}%`);
   }
 
-  /** Steps once on press, then repeats while the button is held. */
   private wireSteppers(container: HTMLElement): void {
     for (const step of container.querySelectorAll<HTMLButtonElement>(".step")) {
       let holdTimer: number | null = null;
@@ -332,7 +328,6 @@ export class SessionView {
         }, STEP_HOLD_DELAY_MS);
       });
 
-      // A click with detail 0 was produced by the keyboard, not by the pointer press above.
       step.addEventListener("click", (event) => {
         if (event.detail === 0) this.stepBy(step);
       });
@@ -353,7 +348,6 @@ export class SessionView {
     else this.setValue(input, this.readValue(input) + delta);
   }
 
-  /** Seconds wrap into the minutes field instead of clamping at its own bounds. */
   private stepSeconds(input: HTMLInputElement, delta: number): void {
     const secondsMax = Number(input.max || "59");
     const minutesMin = Number(this.minutes.min || "0");
