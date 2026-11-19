@@ -10,6 +10,10 @@ ShareTimer はリアルタイム共有タイマーアプリケーションです
 - VRT (Visual Regression Testing): `pnpm vrt`
 - 開発サーバー: `pnpm dev`
 
+## 設計原則（不変の方針）
+- アラームの出力遅延補正（`AudioContext.outputLatency` による前倒し、手動キャリブレーション、音響ループバック実測）は行わない。`outputLatency` は推定値で環境によっては大きく外れるため、期限ちょうどの時刻にスケジュールする。
+- ユーザー管理（アカウント登録）は行わず、管理者の認可は `localStorage` のトークンのみで扱う。
+
 ## 開発ルール
 - 依存関係のインストール・変更は必ず `pnpm` を使用すること。
 - コード変更後は `pnpm typecheck` および `pnpm test` が通過することを確認すること。
