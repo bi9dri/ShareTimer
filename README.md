@@ -16,14 +16,8 @@
 - ホスティング: Cloudflare Workers + Durable Objects（1 セッション = 1 DO、SQLite storage）
 - 同期: WebSocket（配信、Hibernation）+ REST（管理操作）
 - フロント: 素の TypeScript。ビルドは Vite+（Vite / Rolldown）、実行は Workers の静的アセットとして同一オリジン配信
-- アラーム音源: 同梱の WAV を Web Audio でスケジュール再生する（[ADR 0006](docs/adr/0006-bundled-alarm-audio-files.md)）
-- 非営利利用なら Cloudflare 無料枠で運用可能（[ADR 0005](docs/adr/0005-cloudflare-durable-objects-hosting.md)）
-
-## ドキュメント
-
-- [docs/design.md](docs/design.md) — 全体設計
-- [docs/protocol.md](docs/protocol.md) — REST / WebSocket のプロトコル仕様
-- [docs/adr/](docs/adr/) — 意思決定の記録（ADR）
+- アラーム音源: 同梱の WAV を Web Audio でスケジュール再生する
+- 非営利利用なら Cloudflare 無料枠で運用可能
 
 ## 開発
 
