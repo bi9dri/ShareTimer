@@ -10,5 +10,5 @@ playwright/.cache/
 .playwright-mcp/
 
 .worktrees/
-.stryker-tmp/
+.mutator/
 reports/

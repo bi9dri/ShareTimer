@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/@mizchi/mutator/schema/mutator.config.schema.json",
+  "vitestConfig": "vitest.mutator.config.ts",
+  "include": [
+    "src/worker/domain/session.ts",
+    "src/worker/domain/validation.ts",
+    "src/worker/domain/id.ts",
+    "src/worker/domain/token.ts",
+    "src/frontend/format.ts"
+  ],
+  "reporters": ["text", "html"],
+  "concurrency": 4,
+  "typecheck": false
+}
