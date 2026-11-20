@@ -16,8 +16,8 @@
       "groupName": "pnpm"
     },
     {
-      "description": "Group Playwright package and CI container image updates together",
-      "matchPackageNames": ["@playwright/test", "playwright", "playwright-core", "mcr.microsoft.com/playwright"],
+      "description": "Group Playwright package updates together",
+      "matchPackageNames": ["@playwright/test", "playwright", "playwright-core"],
       "groupName": "playwright"
     },
     {
