@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  typecheck:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
@@ -27,22 +27,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          persist-credentials: false
-      - uses: pnpm/action-setup@v6.1.1
-      - uses: actions/setup-node@v7.1.0
-        with:
-          node-version-file: .mise.toml
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
       - run: pnpm test
 
   e2e:
+    needs: check
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -79,6 +67,7 @@ jobs:
           retention-days: 7
 
   vrt:
+    needs: check
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -152,7 +141,7 @@ jobs:
   vrt-baselines:
     needs: vrt
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: write
       actions: read
