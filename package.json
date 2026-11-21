@@ -20,7 +20,7 @@
     "cf-typegen": "wrangler types"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "1.8.1",
+    "@cloudflare/vitest-plugin": "1.8.2",
     "@mizchi/mutator": "0.4.5",
     "@playwright/test": "1.65.0",
     "@types/node": "26.6.6",
