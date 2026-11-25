@@ -247,6 +247,11 @@ it("normalizes an alarm sound that predates the bundled presets", () => {
   expect(toPublicState(legacy, T0).alarmSound).toBe(DEFAULT_ALARM_SOUND);
 });
 
+it("preserves a known non-default alarm sound in public state", () => {
+  const session = run(newSession(), { type: "setAlarmSound", alarmSound: "piano" }, T0);
+  expect(toPublicState(session, T0).alarmSound).toBe("piano");
+});
+
 it("exposes remainingMs only while paused", () => {
   const paused = run(
     run(newSession(), { type: "set", durationMs: 60_000 }, T0),

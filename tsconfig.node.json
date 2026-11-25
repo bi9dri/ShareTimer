@@ -6,6 +6,7 @@
   },
   "include": [
     "vite.config.ts",
+    "vitest.unit.config.ts",
     "playwright.config.ts",
     "playwright.vrt.config.ts",
     "tests/e2e/**/*.ts",

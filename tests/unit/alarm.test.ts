@@ -25,13 +25,11 @@ function state(patch: Partial<PublicState> = {}): PublicState {
 }
 
 it("does not fire for a timer that was already expired on arrival", () => {
+  let gate = initAlarmGate();
   for (let i = 0; i < 3; i++) {
-    const decision = evaluateAlarm(
-      initAlarmGate(),
-      state({ status: "expired", endsAt: null }),
-      -1_000,
-    );
+    const decision = evaluateAlarm(gate, state({ status: "expired", endsAt: null }), -1_000);
     expect(decision.fire).toBe(false);
+    gate = decision.gate;
   }
 });
 
