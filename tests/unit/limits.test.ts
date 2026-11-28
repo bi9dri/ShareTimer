@@ -17,6 +17,7 @@ it("flags an extension that was already at the maximum", () => {
 
 it("does not flag when the timer is not running", () => {
   expect(wasExtendClamped(null, 60_000, 1_000_000)).toBe(false);
+  expect(wasExtendClamped(null, 60_000, 50_000)).toBe(false);
   expect(wasExtendClamped(1_000_000, 60_000, null)).toBe(false);
 });
 
@@ -52,8 +53,17 @@ it("rejects a duration above the maximum", () => {
 });
 
 it("rejects input that is not a non-negative number", () => {
-  expect(parseDuration({ minutes: "abc", seconds: "0" }).ok).toBe(false);
-  expect(parseDuration({ minutes: "-1", seconds: "0" }).ok).toBe(false);
+  for (const input of [
+    { minutes: "abc", seconds: "10" },
+    { minutes: "1", seconds: "abc" },
+    { minutes: "-1", seconds: "120" },
+    { minutes: "1", seconds: "-10" },
+    { minutes: "Infinity", seconds: "0" },
+  ]) {
+    const result = parseDuration(input);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toContain("0 以上");
+  }
   expect(parseDuration({ minutes: "0", seconds: "1.5" }).ok).toBe(true);
   expect(parseDuration({ minutes: "1e3", seconds: "0" }).ok).toBe(true);
 });

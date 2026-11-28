@@ -11,4 +11,5 @@ playwright/.cache/
 
 .worktrees/
 .mutator/
+coverage/
 reports/

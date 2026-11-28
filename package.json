@@ -10,6 +10,7 @@
     "preview": "wrangler dev --port 8787 --ip 127.0.0.1",
     "e2e:server": "wrangler dev --port 8787 --ip 127.0.0.1",
     "test": "vp test",
+    "test:coverage": "vp test --config vitest.unit.config.ts --coverage",
     "test:mutation": "mutator",
     "test:watch": "vp test watch",
     "typecheck": "wrangler types && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.node.json --noEmit",
@@ -24,6 +25,7 @@
     "@mizchi/mutator": "0.4.5",
     "@playwright/test": "1.65.1",
     "@types/node": "26.6.6",
+    "@vitest/coverage-v8": "5.1.0",
     "typescript": "7.0.2",
     "vite-plus": "1.6.0",
     "wrangler": "4.161.0"
